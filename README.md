@@ -3,7 +3,12 @@
 Plataforma web de criadores e fãs. Next.js 15 + TypeScript + Tailwind v4 + Supabase.
 Especificação: `SecretFans_2_0_SPEC_MVP_Comissao_v1_2.md` (MVP somente por comissão).
 
-**Estado atual: rodada 1 (S0 + S1).** Inclui fundação, design system, autenticação, papéis/RLS, verificação de criador e shell do Super Admin com MFA. Pagamentos, mídia, feed, pacotes e comissão ainda não foram implementados.
+**Estado atual: S0 + S1 + S2.**
+
+- S0/S1: fundação, design system, autenticação, papéis/RLS, verificação de criador e Super Admin com MFA.
+- S2: perfis com foto, capa, categorias e links; seguir; Explorar com filtro; feed (Seguindo / Para você); publicações com fotos (grátis, assinantes, PPV); curtidas, comentários e denúncias com fila de moderação.
+- Assinantes e PPV ficam bloqueados para fãs até a S4 (pagamentos): o card aparece, a mídia não.
+- Vídeos e pacotes (S3), comissão e pagamentos (S4+) ainda não foram implementados.
 
 ## Rodando localmente
 
@@ -21,14 +26,14 @@ Usuários de teste, senha e segredo TOTP: ver `supabase/README.md`. E-mails loca
 
 ## Scripts
 
-| Comando                      | O que faz                                                         |
-| ---------------------------- | ----------------------------------------------------------------- |
-| `npm run lint` / `typecheck` | ESLint e TypeScript strict                                        |
-| `npm test`                   | Vitest (schemas, authz, rate limit, tokens)                       |
-| `npm run db:test`            | pgTAP: RLS, elevação de privilégio, auditoria imutável            |
+| Comando                      | O que faz                                                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run lint` / `typecheck` | ESLint e TypeScript strict                                                                                                                      |
+| `npm test`                   | Vitest (schemas, authz, rate limit, tokens)                                                                                                     |
+| `npm run db:test`            | pgTAP: RLS, elevação de privilégio, auditoria imutável                                                                                          |
 | `npm run test:e2e`           | Playwright: aviso +18, cadastro, login, MFA, verificação. Use `E2E_PORT` se a 3000 estiver ocupada (o link de confirmação de e-mail usa a 3000) |
-| `npm run tokens`             | Regenera `src/styles/tokens.css` a partir de `design/tokens.json` |
-| `npm run db:types`           | Regenera `src/types/database.ts`                                  |
+| `npm run tokens`             | Regenera `src/styles/tokens.css` a partir de `design/tokens.json`                                                                               |
+| `npm run db:types`           | Regenera `src/types/database.ts`                                                                                                                |
 
 ## Estrutura
 

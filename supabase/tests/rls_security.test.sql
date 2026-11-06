@@ -17,6 +17,9 @@ begin
 end; $$;
 
 -- Fixtures (como postgres): verificação pendente do criador e um documento no storage.
+-- Limpa o que execuções E2E anteriores deixaram no banco local (tudo é desfeito no rollback).
+delete from public.creator_verifications where user_id = '00000000-0000-4000-a000-000000000002';
+delete from public.user_roles where user_id = '00000000-0000-4000-a000-000000000002' and role = 'creator';
 insert into storage.objects (bucket_id, name, owner_id)
 values ('verification-documents', '00000000-0000-4000-a000-000000000002/doc.jpg', '00000000-0000-4000-a000-000000000002');
 insert into public.creator_verifications (id, user_id, legal_name, birth_date, document_front_path, selfie_path)
@@ -91,7 +94,8 @@ reset role;
 
 -- Moderador com MFA ------------------------------------------------------
 select pg_temp.as_user('00000000-0000-4000-a000-000000000003', 'aal2');
-select is((select count(*)::int from storage.objects where bucket_id = 'verification-documents'), 1,
+select is((select count(*)::int from storage.objects where bucket_id = 'verification-documents'
+            and name = '00000000-0000-4000-a000-000000000002/doc.jpg'), 1,
   'moderador com MFA lê documentos');
 select lives_ok(
   $$ select public.decide_creator_verification('11111111-1111-4111-a111-111111111111', 'approved', 'Documentos conferidos') $$,

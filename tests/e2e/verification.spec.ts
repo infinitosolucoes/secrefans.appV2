@@ -51,11 +51,11 @@ test("criador envia verificação → moderador com MFA aprova → papel creator
     .limit(1);
   expect(audit?.[0]?.reason).toBe("Documentos e selfie conferidos");
 
-  // 4. Criador vê aprovação e o papel
+  // 4. Criador vê aprovação e o Studio liberado para publicar (papel creator)
   await creator.goto("/estudio/verificacao");
   await expect(creator.getByText("Aprovada")).toBeVisible();
-  await creator.goto("/inicio");
-  await expect(creator.getByText("Criador", { exact: true })).toBeVisible();
+  await creator.goto("/estudio");
+  await expect(creator.getByRole("link", { name: "Nova publicação" })).toBeVisible();
 
   await creatorCtx.close();
   await modCtx.close();

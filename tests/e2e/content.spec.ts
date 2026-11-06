@@ -1,0 +1,106 @@
+import { expect, test } from "@playwright/test";
+import { login, serviceClient, TINY_PNG, USERS } from "./helpers";
+
+/**
+ * S2: criador publica (grátis e PPV) → visitante vê a foto grátis e o PPV bloqueado sem URL de
+ * mídia → fã segue, vê no feed, curte, comenta e denuncia.
+ */
+test.describe.configure({ mode: "serial" });
+
+const stamp = Date.now().toString(36);
+const FREE_TEXT = `Post grátis ${stamp}`;
+const PPV_TEXT = `Post PPV ${stamp}`;
+
+test.beforeAll(async () => {
+  const db = serviceClient();
+  // O criador do seed precisa estar aprovado (papel creator) para publicar.
+  await db
+    .from("user_roles")
+    .upsert(
+      { user_id: USERS.creator.id, role: "creator" },
+      { onConflict: "user_id,role", ignoreDuplicates: true },
+    );
+  await db.from("follows").delete().eq("follower_id", USERS.fan.id);
+});
+
+test("criador publica post grátis e PPV com foto", async ({ page }) => {
+  await login(page, USERS.creator.email);
+  for (const [text, visibility] of [
+    [FREE_TEXT, "Grátis"],
+    [PPV_TEXT, "PPV"],
+  ] as const) {
+    await page.goto("/estudio/publicar");
+    await page.getByLabel("Texto").fill(text);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "foto.png",
+      mimeType: "image/png",
+      buffer: TINY_PNG,
+    });
+    await expect(page.getByAltText("Foto 1 selecionada")).toBeVisible();
+    await page.getByText(visibility, { exact: true }).click();
+    if (visibility === "PPV") await page.getByLabel("Preço (R$)").fill("19,90");
+    await page.getByRole("button", { name: "Publicar" }).click();
+    await page.waitForURL("**/estudio?salvo=1");
+    await expect(page.getByText(text)).toBeVisible();
+  }
+});
+
+test("visitante vê a foto grátis e o PPV bloqueado sem URL de mídia", async ({ browser }) => {
+  const ctx = await browser.newContext({
+    storageState: {
+      cookies: [
+        {
+          name: "sf_maior18",
+          value: "1",
+          domain: "localhost",
+          path: "/",
+          expires: -1,
+          httpOnly: true,
+          secure: false,
+          sameSite: "Lax",
+        },
+      ],
+      origins: [],
+    },
+  });
+  const page = await ctx.newPage();
+  await page.goto("/criador_teste");
+
+  const free = page.locator("article", { hasText: FREE_TEXT });
+  await expect(free.locator("img[alt^='Foto 1']")).toHaveAttribute(
+    "src",
+    /\/object\/sign\/post-media\//,
+  );
+
+  const ppv = page.locator("article", { hasText: PPV_TEXT });
+  await expect(ppv.getByText("Desbloqueie por R$ 19,90")).toBeVisible();
+  await expect(ppv.locator("img[alt^='Foto']")).toHaveCount(0);
+  const html = await ppv.innerHTML();
+  expect(html).not.toContain("post-media");
+  await ctx.close();
+});
+
+test("fã segue, vê no feed, curte, comenta e denuncia", async ({ page }) => {
+  await login(page, USERS.fan.email);
+  await page.goto("/criador_teste");
+  await page.getByRole("button", { name: "Seguir" }).click();
+  await expect(page.getByRole("button", { name: "Seguindo" })).toBeVisible();
+
+  await page.goto("/inicio");
+  const card = page.locator("article", { hasText: FREE_TEXT });
+  await expect(card).toBeVisible();
+  await card.getByRole("button", { name: "Curtir" }).click();
+  await expect(card.getByRole("button", { name: "Descurtir" })).toBeVisible();
+
+  await card.getByRole("link", { name: /comentários/ }).click();
+  await page.getByLabel("Escreva um comentário").fill("Que foto linda!");
+  await page.getByRole("button", { name: "Comentar" }).click();
+  await expect(page.getByText("Que foto linda!")).toBeVisible();
+
+  await page.goto("/inicio");
+  const ppvCard = page.locator("article", { hasText: PPV_TEXT });
+  await ppvCard.getByText("Denunciar").click();
+  await ppvCard.getByLabel("Motivo").selectOption("spam");
+  await ppvCard.getByRole("button", { name: "Enviar denúncia" }).click();
+  await expect(ppvCard.getByText(/Denúncia enviada|já denunciou/)).toBeVisible();
+});

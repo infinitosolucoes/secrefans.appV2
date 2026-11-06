@@ -79,6 +79,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"follows": {
+                  Row: {
+                    "created_at": string,"creator_id": string,"follower_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"creator_id": string,"follower_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"creator_id"?: string,"follower_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"permissions": {
                   Row: {
                     "description": string,"key": string
@@ -107,16 +121,122 @@ export type Database = {
                   Relationships: [
                     
                   ]
-                },"profiles": {
+                },"post_comments": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"created_at": string,"creator_intent": boolean,"display_name": string,"handle": string,"id": string,"status": Database["public"]['Enums']["account_status"],"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
+                    "author_id": string,"body": string,"created_at": string,"id": string,"post_id": string,"status": Database["public"]['Enums']["comment_status"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle": string,"id": string,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "author_id": string,"body": string,"created_at"?: string,"id"?: string,"post_id": string,"status"?: Database["public"]['Enums']["comment_status"]
                   }
                   Update: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle"?: string,"id"?: string,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "author_id"?: string,"body"?: string,"created_at"?: string,"id"?: string,"post_id"?: string,"status"?: Database["public"]['Enums']["comment_status"]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "post_comments_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "feed_posts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "post_comments_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"post_likes": {
+                  Row: {
+                    "created_at": string,"post_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"post_id": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"post_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "post_likes_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "feed_posts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "post_likes_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"post_media": {
+                  Row: {
+                    "created_at": string,"creator_id": string,"height": number | null,"id": string,"kind": string,"position": number,"post_id": string,"storage_path": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"creator_id": string,"height"?: number | null,"id"?: string,"kind"?: string,"position"?: number,"post_id": string,"storage_path": string,"width"?: number | null
+                  }
+                  Update: {
+                    "created_at"?: string,"creator_id"?: string,"height"?: number | null,"id"?: string,"kind"?: string,"position"?: number,"post_id"?: string,"storage_path"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "post_media_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "feed_posts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "post_media_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"posts": {
+                  Row: {
+                    "body": string,"created_at": string,"creator_id": string,"id": string,"price_cents": number | null,"published_at": string | null,"removed_reason": string | null,"status": Database["public"]['Enums']["post_status"],"updated_at": string,"visibility": Database["public"]['Enums']["post_visibility"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string,"created_at"?: string,"creator_id": string,"id"?: string,"price_cents"?: number | null,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["post_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["post_visibility"]
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"creator_id"?: string,"id"?: string,"price_cents"?: number | null,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["post_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["post_visibility"]
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"profiles": {
+                  Row: {
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"display_name": string,"handle": string,"id": string,"links": (string)[],"status": Database["public"]['Enums']["account_status"],"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                  }
+                  Update: {
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"reports": {
+                  Row: {
+                    "created_at": string,"decided_at": string | null,"decided_by": string | null,"decision_reason": string | null,"details": string,"id": string,"reason": string,"reporter_id": string,"status": Database["public"]['Enums']["report_status"],"target_id": string,"target_type": Database["public"]['Enums']["report_target"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"decision_reason"?: string | null,"details"?: string,"id"?: string,"reason": string,"reporter_id": string,"status"?: Database["public"]['Enums']["report_status"],"target_id": string,"target_type": Database["public"]['Enums']["report_target"]
+                  }
+                  Update: {
+                    "created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"decision_reason"?: string | null,"details"?: string,"id"?: string,"reason"?: string,"reporter_id"?: string,"status"?: Database["public"]['Enums']["report_status"],"target_id"?: string,"target_type"?: Database["public"]['Enums']["report_target"]
                   }
                   Relationships: [
                     
@@ -172,16 +292,24 @@ isOneToOne: false
                 }
           }
           Views: {
-            "public_profiles": {
+            "feed_posts": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"created_at": string,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null
+                    "avatar_path": string | null,"body": string,"comment_count": number | null,"creator_id": string,"display_name": string,"handle": string,"id": string,"like_count": number | null,"liked_by_me": boolean | null,"media_count": number | null,"price_cents": number | null,"published_at": string | null,"unlocked": boolean | null,"visibility": Database["public"]['Enums']["post_visibility"]
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"public_profiles": {
+                  Row: {
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null,"links": (string)[]
                   }
                   ComputedFields: never
                   Insert: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null
                          }
                         Update: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null
                          }
                         Relationships: [
                     
@@ -207,8 +335,22 @@ isOneToOne: false
 "appeal_creator_verification":
 { Args: { "p_text": string,"p_verification_id": string }; Returns: undefined
                            },
+"can_follow":
+{ Args: { "p_creator_id": string }; Returns: boolean
+                           },
+"can_view_post_media":
+{ Args: { "p_post_id": string }; Returns: boolean
+                           },
+"creator_stats":
+{ Args: { "p_creator_id": string }; Returns: {
+              "followers": number,"posts": number
+            }[]
+                           },
 "decide_creator_verification":
 { Args: { "p_reason": string,"p_status": Database["public"]['Enums']["verification_status"],"p_verification_id": string }; Returns: undefined
+                           },
+"decide_report":
+{ Args: { "p_reason": string,"p_remove_target"?: boolean,"p_report_id": string,"p_status": Database["public"]['Enums']["report_status"] }; Returns: undefined
                            },
 "grant_role":
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
@@ -222,6 +364,9 @@ isOneToOne: false
 "has_role":
 { Args: { "check_role": Database["public"]['Enums']["app_role"] }; Returns: boolean
                            },
+"is_blocked_with":
+{ Args: { "p_other": string }; Returns: boolean
+                           },
 "is_mfa_session":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -233,6 +378,14 @@ isOneToOne: false
                            },
 "my_roles":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["app_role"][]
+                           },
+"post_card_visible":
+{ Args: { "p_post_id": string }; Returns: boolean
+                           },
+"post_media_for":
+{ Args: { "p_post_id": string }; Returns: {
+              "height": number,"position": number,"storage_path": string,"width": number
+            }[]
                            },
 "revoke_role":
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
@@ -248,7 +401,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","profile_visibility": "public"|"followers"|"private","verification_status": "pending"|"approved"|"rejected"|"suspended"
+            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile","verification_status": "pending"|"approved"|"rejected"|"suspended"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -368,7 +521,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"profile_visibility": ["public", "followers", "private"],"verification_status": ["pending", "approved", "rejected", "suspended"]
+            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile"],"verification_status": ["pending", "approved", "rejected", "suspended"]
           }
         }
 } as const

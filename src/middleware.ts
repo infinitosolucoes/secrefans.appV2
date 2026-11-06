@@ -5,6 +5,8 @@ import { AGE_COOKIE, AGE_GATE_PATH, isAgeGateExempt } from "@/features/age-gate/
 const PROTECTED_PREFIXES = [
   "/inicio",
   "/assinaturas",
+  "/biblioteca",
+  "/carteira",
   "/mensagens",
   "/notificacoes",
   "/conta",

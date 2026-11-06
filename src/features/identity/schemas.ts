@@ -17,6 +17,8 @@ export const RESERVED_HANDLES = new Set([
   "inicio",
   "explorar",
   "assinaturas",
+  "biblioteca",
+  "carteira",
   "mensagens",
   "notificacoes",
   "conta",

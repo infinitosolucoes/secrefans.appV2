@@ -3,7 +3,10 @@ import {
   Bell,
   Compass,
   Crown,
+  Flame,
   House,
+  Library,
+  Wallet,
   MessageCircle,
   Search,
   ShieldCheck,
@@ -22,9 +25,9 @@ import type { SessionUser } from "@/server/auth/session";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
-/** Itens da sidebar na ordem do DS: Início, Explorar, Criadores, Assinaturas, Mensagens, Notificações. */
-const mainNav: NavItem[] = [
-  { href: "/inicio", label: "Início", icon: House },
+/** Visitante: menu do DS (Início, Explorar, Criadores, Assinaturas, Mensagens, Notificações). */
+const visitorNav: NavItem[] = [
+  { href: "/descobrir", label: "Início", icon: House },
   { href: "/explorar", label: "Explorar", icon: Compass },
   { href: "/criadores", label: "Criadores", icon: Users },
   { href: "/assinaturas", label: "Assinaturas", icon: Star },
@@ -32,9 +35,19 @@ const mainNav: NavItem[] = [
   { href: "/notificacoes", label: "Notificações", icon: Bell },
 ];
 
-/** "Início" do visitante é a descoberta pública; o do usuário logado é o feed. */
-const withHome = (items: NavItem[], user: SessionUser | null): NavItem[] =>
-  items.map((i) => (i.href === "/inicio" && !user ? { ...i, href: "/descobrir" } : i));
+/** Logado: menu das telas do fã no canvas (Início, Explorar, Feed, Biblioteca, Mensagens, Carteira, Notificações). */
+const memberNav: NavItem[] = [
+  { href: "/descobrir", label: "Início", icon: House },
+  { href: "/explorar", label: "Explorar", icon: Compass },
+  { href: "/inicio", label: "Feed", icon: Flame },
+  { href: "/biblioteca", label: "Biblioteca", icon: Library },
+  { href: "/mensagens", label: "Mensagens", icon: MessageCircle },
+  { href: "/carteira", label: "Carteira", icon: Wallet },
+  { href: "/notificacoes", label: "Notificações", icon: Bell },
+];
+
+const navFor = (user: SessionUser | null) => (user ? memberNav : visitorNav);
+const findNav = (items: NavItem[], href: string) => items.find((i) => i.href === href)!;
 
 const topLinks = [
   { href: "/inicio", label: "Início" },
@@ -121,7 +134,7 @@ export function Topbar({ user, active }: { user: SessionUser | null; active?: st
 
 /** Sidebar 240px do DS. Ativo em surface-alt + radius-md. Visitante vê "Criar Conta" e o card "Seja um Criador". */
 export function Sidebar({ user, active }: { user: SessionUser | null; active?: string }) {
-  const items: NavItem[] = withHome(mainNav, user);
+  const items: NavItem[] = [...navFor(user)];
   if (user) items.push({ href: "/conta/perfil", label: "Meu perfil", icon: UserRound });
   if (user && (user.roles.includes("creator") || user.creatorIntent)) {
     items.push({ href: "/estudio", label: "Creator Studio", icon: Sparkles });
@@ -179,12 +192,14 @@ export function Sidebar({ user, active }: { user: SessionUser | null; active?: s
 /** Navegação inferior no mobile. Criadores veem o Estúdio no lugar de Notificações. */
 function BottomNav({ user, active }: { user: SessionUser | null; active?: string }) {
   const showStudio = user && (user.roles.includes("creator") || user.creatorIntent);
-  const nav = withHome(mainNav, user);
+  const nav = navFor(user);
   const items: NavItem[] = [
-    nav[0]!,
-    mainNav[1]!,
-    mainNav[4]!,
-    showStudio ? { href: "/estudio", label: "Estúdio", icon: Sparkles } : mainNav[5]!,
+    user ? findNav(nav, "/inicio") : findNav(nav, "/descobrir"),
+    findNav(nav, "/explorar"),
+    findNav(nav, "/mensagens"),
+    showStudio
+      ? { href: "/estudio", label: "Estúdio", icon: Sparkles }
+      : findNav(nav, "/notificacoes"),
     user
       ? { href: "/conta/perfil", label: "Perfil", icon: UserRound }
       : { href: "/entrar", label: "Entrar", icon: UserRound },

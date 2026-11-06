@@ -33,9 +33,19 @@ const ROLE_PERMISSIONS: Record<AppRole, readonly string[]> = {
     "verifications.read",
     "verifications.decide",
     "verification_documents.read",
+    "reports.read",
+    "reports.decide",
+    "content.moderate",
   ],
   finance: ["users.read", "audit.read"],
-  admin_ops: ["users.read", "users.manage", "verifications.read", "audit.read", "settings.read"],
+  admin_ops: [
+    "users.read",
+    "users.manage",
+    "verifications.read",
+    "audit.read",
+    "settings.read",
+    "reports.read",
+  ],
   super_admin: [
     "users.read",
     "users.manage",
@@ -46,6 +56,9 @@ const ROLE_PERMISSIONS: Record<AppRole, readonly string[]> = {
     "audit.read",
     "settings.read",
     "settings.manage",
+    "reports.read",
+    "reports.decide",
+    "content.moderate",
   ],
 };
 
