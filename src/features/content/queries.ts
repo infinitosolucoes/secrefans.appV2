@@ -7,9 +7,12 @@ const SIGNED_URL_TTL = 600;
 export const FEED_PAGE_SIZE = 20;
 
 export interface PostMedia {
+  kind: "image" | "video";
   url: string;
+  posterUrl: string | null;
   width: number | null;
   height: number | null;
+  duration: number | null;
 }
 
 export interface FeedPost {
@@ -23,6 +26,7 @@ export interface FeedPost {
   priceCents: number | null;
   publishedAt: string | null;
   mediaCount: number;
+  videoCount: number;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
@@ -46,10 +50,11 @@ type FeedRow = {
   comment_count: number | null;
   liked_by_me: boolean | null;
   unlocked: boolean | null;
+  video_count: number | null;
 };
 
 const FEED_COLUMNS =
-  "id, creator_id, handle, display_name, avatar_path, body, visibility, price_cents, published_at, media_count, like_count, comment_count, liked_by_me, unlocked";
+  "id, creator_id, handle, display_name, avatar_path, body, visibility, price_cents, published_at, media_count, like_count, comment_count, liked_by_me, unlocked, video_count";
 
 const toPost = (r: FeedRow): FeedPost => ({
   id: r.id ?? "",
@@ -62,6 +67,7 @@ const toPost = (r: FeedRow): FeedPost => ({
   priceCents: r.price_cents,
   publishedAt: r.published_at,
   mediaCount: r.media_count ?? 0,
+  videoCount: r.video_count ?? 0,
   likeCount: r.like_count ?? 0,
   commentCount: r.comment_count ?? 0,
   likedByMe: Boolean(r.liked_by_me),
@@ -83,7 +89,9 @@ async function attachMedia(posts: FeedPost[]): Promise<FeedPost[]> {
       return { postId: p.id, items: data ?? [] };
     }),
   );
-  const paths = rows.flatMap((r) => r.items.map((i) => i.storage_path));
+  const paths = rows.flatMap((r) =>
+    r.items.flatMap((i) => (i.poster_path ? [i.storage_path, i.poster_path] : [i.storage_path])),
+  );
   if (paths.length === 0) return posts;
 
   const { data: signed } = await createServiceSupabase()
@@ -96,9 +104,12 @@ async function attachMedia(posts: FeedPost[]): Promise<FeedPost[]> {
       r.postId,
       r.items
         .map((i) => ({
+          kind: (i.kind === "video" ? "video" : "image") as PostMedia["kind"],
           url: urlByPath.get(i.storage_path) ?? "",
+          posterUrl: i.poster_path ? (urlByPath.get(i.poster_path) ?? null) : null,
           width: i.width,
           height: i.height,
+          duration: i.duration_seconds,
         }))
         .filter((m) => m.url),
     ]),

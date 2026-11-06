@@ -4,7 +4,7 @@ import { Avatar } from "@/components/domain/Avatar";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
-import { formatBRL, VISIBILITY_LABEL } from "./constants";
+import { formatBRL, formatDuration, formatMediaCount, VISIBILITY_LABEL } from "./constants";
 import { LikeButton, ReportButton } from "./interactions";
 import type { FeedPost, PostMedia } from "./queries";
 
@@ -19,21 +19,39 @@ export function MediaGallery({ media, className }: { media: PostMedia[]; classNa
         className,
       )}
     >
-      {media.map((m, i) => (
-        // eslint-disable-next-line @next/next/no-img-element -- URL assinada de curta duração
-        <img
-          key={m.url}
-          src={m.url}
-          alt={`Foto ${i + 1} de ${media.length}`}
-          width={m.width ?? undefined}
-          height={m.height ?? undefined}
-          loading="lazy"
-          className={cn(
-            "w-full bg-surface-alt object-cover",
-            single ? "max-h-[640px]" : "aspect-square",
-          )}
-        />
-      ))}
+      {media.map((m, i) =>
+        m.kind === "video" ? (
+          // URL assinada curta; sem download direto pelo menu nativo.
+          <video
+            key={m.url}
+            src={m.url}
+            poster={m.posterUrl ?? undefined}
+            controls
+            playsInline
+            preload="none"
+            controlsList="nodownload"
+            aria-label={`Vídeo ${i + 1} de ${media.length}${m.duration ? `, ${formatDuration(m.duration)}` : ""}`}
+            className={cn(
+              "w-full bg-black object-contain",
+              single ? "max-h-[640px]" : "aspect-square",
+            )}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- URL assinada de curta duração
+          <img
+            key={m.url}
+            src={m.url}
+            alt={`Foto ${i + 1} de ${media.length}`}
+            width={m.width ?? undefined}
+            height={m.height ?? undefined}
+            loading="lazy"
+            className={cn(
+              "w-full bg-surface-alt object-cover",
+              single ? "max-h-[640px]" : "aspect-square",
+            )}
+          />
+        ),
+      )}
     </div>
   );
 }
@@ -53,8 +71,8 @@ export function LockedMedia({ post }: { post: FeedPost }) {
           {ppv ? `Desbloqueie por ${formatBRL(post.priceCents)}` : "Conteúdo para assinantes"}
         </p>
         <p className="type-caption text-ink-muted">
-          {post.mediaCount} {post.mediaCount === 1 ? "foto" : "fotos"} · a mídia só é carregada
-          depois do acesso liberado
+          {formatMediaCount(post.mediaCount - post.videoCount, post.videoCount)} · a mídia só é
+          carregada depois do acesso liberado
         </p>
         <span className="mt-2 inline-flex h-9 items-center rounded-pill border border-border px-4 type-caption font-semibold text-ink-muted">
           {ppv ? "Compra avulsa em breve" : "Assinaturas em breve"}

@@ -13,6 +13,10 @@ import { CATEGORIES } from "@/features/discovery/categories";
 import { BANNER_BUCKET, publicImageUrl } from "@/features/content/constants";
 import { PostCard } from "@/features/content/PostCard";
 import { FollowButton, ReportButton } from "@/features/content/interactions";
+import { PackageCard } from "@/features/packages/PackageCard";
+import { SocialLinks } from "@/features/identity/SocialLinks";
+import { parseSocials } from "@/features/identity/socials";
+import { getCreatorPackages } from "@/features/packages/queries";
 import { getCreatorPosts, isFollowing } from "@/features/content/queries";
 
 const HANDLE = /^[a-z0-9_.]{3,30}$/;
@@ -24,7 +28,7 @@ async function loadProfile(handle: string) {
   const { data } = await supabase
     .from("public_profiles")
     .select(
-      "id, handle, display_name, bio, is_creator, avatar_path, banner_path, categories, links",
+      "id, handle, display_name, bio, is_creator, avatar_path, banner_path, categories, links, socials",
     )
     .eq("handle", handle)
     .maybeSingle();
@@ -61,8 +65,10 @@ export default async function PublicProfile({
 
   const supabase = await createServerSupabase();
   const isOwner = user?.id === profile.id;
-  const [posts, following, { data: stats }] = await Promise.all([
-    profile.is_creator ? getCreatorPosts(profile.id) : Promise.resolve([]),
+  const tab = aba === "sobre" ? "sobre" : aba === "pacotes" ? "pacotes" : "publicacoes";
+  const [posts, packages, following, { data: stats }] = await Promise.all([
+    profile.is_creator && tab === "publicacoes" ? getCreatorPosts(profile.id) : Promise.resolve([]),
+    profile.is_creator && tab === "pacotes" ? getCreatorPackages(profile.id) : Promise.resolve([]),
     isFollowing(user?.id, profile.id),
     supabase.rpc("creator_stats", { p_creator_id: profile.id }).single(),
   ]);
@@ -70,7 +76,6 @@ export default async function PublicProfile({
   const name = profile.display_name || profile.handle;
   const bannerUrl = publicImageUrl(BANNER_BUCKET, profile.banner_path);
   const profileUrl = `${publicEnv().NEXT_PUBLIC_SITE_URL.replace(/^https?:\/\//, "")}/${profile.handle}`;
-  const tab = aba === "sobre" ? "sobre" : "publicacoes";
   const base = `/${profile.handle}`;
   const categories = (profile.categories ?? [])
     .map((slug) => CATEGORIES.find((c) => c.slug === slug)?.label)
@@ -115,6 +120,9 @@ export default async function PublicProfile({
               <strong className="text-ink">{stats?.followers ?? 0}</strong> seguidores
             </p>
           )}
+          <div className="mt-3">
+            <SocialLinks socials={parseSocials(profile.socials)} />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {isOwner ? (
@@ -139,13 +147,40 @@ export default async function PublicProfile({
         <LinkTabs
           items={[
             { href: base, label: "Publicações" },
+            ...(profile.is_creator ? [{ href: `${base}?aba=pacotes`, label: "Pacotes" }] : []),
             { href: `${base}?aba=sobre`, label: "Sobre" },
           ]}
-          active={tab === "sobre" ? `${base}?aba=sobre` : base}
+          active={tab === "publicacoes" ? base : `${base}?aba=${tab}`}
         />
       </div>
 
-      {tab === "sobre" ? (
+      {tab === "pacotes" ? (
+        packages.length === 0 ? (
+          <EmptyState
+            title="Nenhum pacote à venda"
+            description={
+              isOwner
+                ? "Monte seu primeiro pacote de fotos e vídeos no Studio."
+                : "Quando houver pacotes, eles aparecem aqui."
+            }
+            action={
+              isOwner ? (
+                <Link href="/estudio/pacotes/novo" className={buttonClasses("outline", "sm")}>
+                  Novo pacote
+                </Link>
+              ) : undefined
+            }
+          />
+        ) : (
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {packages.map((p) => (
+              <li key={p.id}>
+                <PackageCard pkg={p} />
+              </li>
+            ))}
+          </ul>
+        )
+      ) : tab === "sobre" ? (
         <section className="flex max-w-2xl flex-col gap-6">
           {profile.bio ? (
             <p className="whitespace-pre-line type-body text-ink">{profile.bio}</p>

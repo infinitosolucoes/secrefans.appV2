@@ -93,6 +93,72 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"package_items": {
+                  Row: {
+                    "duration_seconds": number | null,"height": number | null,"id": string,"kind": string,"position": number,"poster_path": string | null,"size_bytes": number | null,"storage_path": string,"version_id": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "duration_seconds"?: number | null,"height"?: number | null,"id"?: string,"kind": string,"position"?: number,"poster_path"?: string | null,"size_bytes"?: number | null,"storage_path": string,"version_id": string,"width"?: number | null
+                  }
+                  Update: {
+                    "duration_seconds"?: number | null,"height"?: number | null,"id"?: string,"kind"?: string,"position"?: number,"poster_path"?: string | null,"size_bytes"?: number | null,"storage_path"?: string,"version_id"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "package_items_version_id_fkey"
+      columns: ["version_id"]
+isOneToOne: false
+      referencedRelation: "package_versions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"package_versions": {
+                  Row: {
+                    "audience": Database["public"]['Enums']["package_audience"],"category": string | null,"cover_path": string | null,"created_at": string,"description": string,"id": string,"package_id": string,"price_cents": number,"published_at": string | null,"status": Database["public"]['Enums']["package_version_status"],"title": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "audience"?: Database["public"]['Enums']["package_audience"],"category"?: string | null,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"package_id": string,"price_cents": number,"published_at"?: string | null,"status"?: Database["public"]['Enums']["package_version_status"],"title": string,"version": number
+                  }
+                  Update: {
+                    "audience"?: Database["public"]['Enums']["package_audience"],"category"?: string | null,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"package_id"?: string,"price_cents"?: number,"published_at"?: string | null,"status"?: Database["public"]['Enums']["package_version_status"],"title"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "package_versions_package_id_fkey"
+      columns: ["package_id"]
+isOneToOne: false
+      referencedRelation: "packages"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "package_versions_package_id_fkey"
+      columns: ["package_id"]
+isOneToOne: false
+      referencedRelation: "public_packages"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"packages": {
+                  Row: {
+                    "created_at": string,"creator_id": string,"current_version_id": string | null,"id": string,"published_at": string | null,"removed_reason": string | null,"status": Database["public"]['Enums']["package_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"creator_id": string,"current_version_id"?: string | null,"id": string,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["package_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"creator_id"?: string,"current_version_id"?: string | null,"id"?: string,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["package_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "packages_current_version_fk"
+      columns: ["current_version_id"]
+isOneToOne: false
+      referencedRelation: "package_versions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"permissions": {
                   Row: {
                     "description": string,"key": string
@@ -175,14 +241,14 @@ isOneToOne: false
                   ]
                 },"post_media": {
                   Row: {
-                    "created_at": string,"creator_id": string,"height": number | null,"id": string,"kind": string,"position": number,"post_id": string,"storage_path": string,"width": number | null
+                    "created_at": string,"creator_id": string,"duration_seconds": number | null,"height": number | null,"id": string,"kind": string,"position": number,"post_id": string,"poster_path": string | null,"size_bytes": number | null,"storage_path": string,"width": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"creator_id": string,"height"?: number | null,"id"?: string,"kind"?: string,"position"?: number,"post_id": string,"storage_path": string,"width"?: number | null
+                    "created_at"?: string,"creator_id": string,"duration_seconds"?: number | null,"height"?: number | null,"id"?: string,"kind"?: string,"position"?: number,"post_id": string,"poster_path"?: string | null,"size_bytes"?: number | null,"storage_path": string,"width"?: number | null
                   }
                   Update: {
-                    "created_at"?: string,"creator_id"?: string,"height"?: number | null,"id"?: string,"kind"?: string,"position"?: number,"post_id"?: string,"storage_path"?: string,"width"?: number | null
+                    "created_at"?: string,"creator_id"?: string,"duration_seconds"?: number | null,"height"?: number | null,"id"?: string,"kind"?: string,"position"?: number,"post_id"?: string,"poster_path"?: string | null,"size_bytes"?: number | null,"storage_path"?: string,"width"?: number | null
                   }
                   Relationships: [
                     {
@@ -215,14 +281,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"display_name": string,"handle": string,"id": string,"links": (string)[],"status": Database["public"]['Enums']["account_status"],"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"display_name": string,"handle": string,"id": string,"links": (string)[],"socials": NonNullable<Json>,"status": Database["public"]['Enums']["account_status"],"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Update: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Relationships: [
                     
@@ -294,7 +360,15 @@ isOneToOne: false
           Views: {
             "feed_posts": {
                   Row: {
-                    "avatar_path": string | null,"body": string,"comment_count": number | null,"creator_id": string,"display_name": string,"handle": string,"id": string,"like_count": number | null,"liked_by_me": boolean | null,"media_count": number | null,"price_cents": number | null,"published_at": string | null,"unlocked": boolean | null,"visibility": Database["public"]['Enums']["post_visibility"]
+                    "avatar_path": string | null,"body": string,"comment_count": number | null,"creator_id": string,"display_name": string,"handle": string,"id": string,"like_count": number | null,"liked_by_me": boolean | null,"media_count": number | null,"price_cents": number | null,"published_at": string | null,"unlocked": boolean | null,"video_count": number | null,"visibility": Database["public"]['Enums']["post_visibility"]
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"public_packages": {
+                  Row: {
+                    "audience": Database["public"]['Enums']["package_audience"],"category": string | null,"cover_path": string | null,"creator_id": string,"description": string,"display_name": string,"handle": string,"id": string,"photo_count": number | null,"price_cents": number,"published_at": string | null,"title": string,"version": number,"version_published_at": string | null,"video_count": number | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -302,14 +376,14 @@ isOneToOne: false
                   ]
                 },"public_profiles": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null,"links": (string)[]
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null,"links": (string)[],"socials": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
                          }
                         Update: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
                          }
                         Relationships: [
                     
@@ -352,6 +426,9 @@ isOneToOne: false
 "decide_report":
 { Args: { "p_reason": string,"p_remove_target"?: boolean,"p_report_id": string,"p_status": Database["public"]['Enums']["report_status"] }; Returns: undefined
                            },
+"delete_package_draft":
+{ Args: { "p_package_id": string }; Returns: string[]
+                           },
 "grant_role":
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
                            },
@@ -384,14 +461,20 @@ isOneToOne: false
                            },
 "post_media_for":
 { Args: { "p_post_id": string }; Returns: {
-              "height": number,"position": number,"storage_path": string,"width": number
+              "duration_seconds": number,"height": number,"kind": string,"position": number,"poster_path": string,"storage_path": string,"width": number
             }[]
                            },
 "revoke_role":
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
                            },
+"save_package":
+{ Args: { "p_audience": Database["public"]['Enums']["package_audience"],"p_category": string,"p_cover_path": string,"p_description": string,"p_items": Json,"p_package_id": string,"p_price_cents": number,"p_publish": boolean,"p_title": string }; Returns: number
+                           },
 "set_account_status":
 { Args: { "p_reason": string,"p_status": Database["public"]['Enums']["account_status"],"p_user_id": string }; Returns: undefined
+                           },
+"set_package_status":
+{ Args: { "p_package_id": string,"p_status": Database["public"]['Enums']["package_status"] }; Returns: undefined
                            },
 "staff_can":
 { Args: { "permission": string }; Returns: boolean
@@ -401,7 +484,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile","verification_status": "pending"|"approved"|"rejected"|"suspended"
+            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","package_audience": "all"|"subscribers","package_status": "draft"|"published"|"archived"|"removed","package_version_status": "draft"|"published"|"superseded","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile","verification_status": "pending"|"approved"|"rejected"|"suspended"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -521,7 +604,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile"],"verification_status": ["pending", "approved", "rejected", "suspended"]
+            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"package_audience": ["all", "subscribers"],"package_status": ["draft", "published", "archived", "removed"],"package_version_status": ["draft", "published", "superseded"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile"],"verification_status": ["pending", "approved", "rejected", "suspended"]
           }
         }
 } as const

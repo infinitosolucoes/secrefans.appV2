@@ -116,7 +116,8 @@ port = 54324
 [storage]
 enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
-file_size_limit = "50MiB"
+# Vídeos MP4 de posts e pacotes chegam a 100 MiB (limite por bucket na migration S3).
+file_size_limit = "100MiB"
 
 # Uncomment to configure local storage buckets
 # [storage.buckets.images]
@@ -161,7 +162,8 @@ site_url = "http://localhost:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback"]
+# 3001: dev server alternativo quando a 3000 está ocupada (E2E com E2E_PORT=3001).
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback", "http://localhost:3001/auth/callback"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.

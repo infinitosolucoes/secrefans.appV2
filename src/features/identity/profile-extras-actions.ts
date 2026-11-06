@@ -6,6 +6,7 @@ import { requireUser } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { AVATAR_BUCKET, BANNER_BUCKET, profileImagePathRe } from "@/features/content/constants";
 import { CATEGORIES } from "@/features/discovery/categories";
+import { normalizeSocialHandle, SOCIAL_HANDLE_RE, SOCIAL_NETWORKS } from "./socials";
 
 export interface ExtrasResult {
   ok: boolean;
@@ -56,6 +57,28 @@ const detailsSchema = z.object({
     )
     .max(3),
 });
+
+export async function updateSocialsAction(
+  _: ExtrasResult | null,
+  fd: FormData,
+): Promise<ExtrasResult> {
+  const user = await requireUser("/conta/perfil");
+  const socials: Record<string, string> = {};
+  const errors: Record<string, string> = {};
+  for (const n of SOCIAL_NETWORKS) {
+    const handle = normalizeSocialHandle(String(fd.get(n.key) ?? ""));
+    if (!handle) continue;
+    if (!SOCIAL_HANDLE_RE.test(handle))
+      errors[n.key] = "Use só o nome de usuário (letras, números, ponto e _).";
+    else socials[n.key] = handle;
+  }
+  if (Object.keys(errors).length) return { ok: false, errors };
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("profiles").update({ socials }).eq("id", user.id);
+  if (error) return { ok: false, message: "Não foi possível salvar as redes sociais." };
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Redes sociais atualizadas." };
+}
 
 export async function updateCreatorDetailsAction(
   _: ExtrasResult | null,

@@ -10,6 +10,33 @@ export const MAX_IMAGE_DIMENSION = 2560;
 export const MAX_SOURCE_IMAGE_BYTES = 25 * 1024 * 1024;
 export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+/** Vídeo no MVP: MP4 enviado como está (sem transcodificação), até 100 MB e 10 minutos. */
+export const ACCEPTED_VIDEO_TYPES = ["video/mp4"];
+export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+export const MAX_VIDEO_SECONDS = 600;
+export const PACKAGE_COVER_BUCKET = "package-covers";
+export const MAX_PACKAGE_ITEMS = 100;
+export const PACKAGE_PRICE_MIN = 5;
+export const PACKAGE_PRICE_MAX = 2000;
+
+export type MediaKind = "image" | "video";
+
+export const formatDuration = (seconds: number | null | undefined) => {
+  if (!seconds) return "";
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
+
+/** "3 fotos · 2 vídeos" */
+export const formatMediaCount = (photos: number, videos: number) =>
+  [
+    photos ? `${photos} ${photos === 1 ? "foto" : "fotos"}` : "",
+    videos ? `${videos} ${videos === 1 ? "vídeo" : "vídeos"}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ") || "sem mídia";
+
 /** Limites de preço do PPV em reais (a cobrança real chega na S4). */
 export const PPV_PRICE_MIN = 5;
 export const PPV_PRICE_MAX = 1000;
@@ -68,6 +95,8 @@ export function publicImageUrl(bucket: string, path: string | null | undefined):
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 export const UUID_RE = new RegExp(`^${UUID}$`);
-export const postMediaPathRe = (userId: string, postId: string) =>
-  new RegExp(`^${userId}/${postId}/${UUID}\\.webp$`);
+export const postMediaPathRe = (userId: string, postId: string, ext: "webp" | "mp4" = "webp") =>
+  new RegExp(`^${userId}/${postId}/${UUID}\\.${ext}$`);
+export const packageMediaPathRe = (userId: string, packageId: string, ext: "webp" | "mp4") =>
+  new RegExp(`^${userId}/packages/${packageId}/${UUID}\\.${ext}$`);
 export const profileImagePathRe = (userId: string) => new RegExp(`^${userId}/${UUID}\\.webp$`);

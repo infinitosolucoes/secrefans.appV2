@@ -39,9 +39,13 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
       d.media.map((m, position) => ({
         post_id: d.postId,
         creator_id: user.id,
+        kind: m.kind,
         storage_path: m.path,
+        poster_path: m.poster,
         width: m.width,
         height: m.height,
+        duration_seconds: m.duration,
+        size_bytes: m.size,
         position,
       })),
     );
@@ -49,7 +53,9 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
       // Desfaz: o post ainda é rascunho ou acabou de ser criado; remove linhas e arquivos.
       await supabase.from("posts").update({ status: "draft" }).eq("id", d.postId);
       await supabase.from("posts").delete().eq("id", d.postId);
-      await supabase.storage.from(POST_MEDIA_BUCKET).remove(d.media.map((m) => m.path));
+      await supabase.storage
+        .from(POST_MEDIA_BUCKET)
+        .remove(d.media.flatMap((m) => (m.poster ? [m.path, m.poster] : [m.path])));
       return fail("Falha ao registrar as fotos. Tente novamente.");
     }
   }
@@ -82,7 +88,7 @@ export async function deleteDraftAction(fd: FormData): Promise<void> {
   const supabase = await createServerSupabase();
   const { data: media } = await supabase
     .from("post_media")
-    .select("storage_path")
+    .select("storage_path, poster_path")
     .eq("post_id", id);
   const { error } = await supabase
     .from("posts")
@@ -90,8 +96,10 @@ export async function deleteDraftAction(fd: FormData): Promise<void> {
     .eq("id", id)
     .eq("creator_id", user.id)
     .eq("status", "draft");
-  if (!error && media && media.length > 0)
-    await supabase.storage.from(POST_MEDIA_BUCKET).remove(media.map((m) => m.storage_path));
+  const paths = (media ?? []).flatMap((m) =>
+    m.poster_path ? [m.storage_path, m.poster_path] : [m.storage_path],
+  );
+  if (!error && paths.length > 0) await supabase.storage.from(POST_MEDIA_BUCKET).remove(paths);
   revalidatePath("/estudio");
 }
 

@@ -80,6 +80,19 @@ test("visitante vê a foto grátis e o PPV bloqueado sem URL de mídia", async (
   await ctx.close();
 });
 
+test("fã cadastra redes sociais e elas aparecem no perfil público", async ({ page }) => {
+  await login(page, USERS.fan.email);
+  await page.goto("/conta/perfil");
+  await page.getByLabel("Instagram").fill("https://www.instagram.com/fa.teste/");
+  await page.getByLabel("TikTok").fill("@fateste");
+  await page.getByRole("button", { name: "Salvar redes sociais" }).click();
+  await expect(page.getByText("Redes sociais atualizadas.")).toBeVisible();
+  await page.goto("/fa_teste");
+  const ig = page.getByRole("link", { name: "Instagram: fa.teste" });
+  await expect(ig).toHaveAttribute("href", "https://instagram.com/fa.teste");
+  await expect(page.getByRole("link", { name: "TikTok: fateste" })).toBeVisible();
+});
+
 test("fã segue, vê no feed, curte, comenta e denuncia", async ({ page }) => {
   await login(page, USERS.fan.email);
   await page.goto("/criador_teste");

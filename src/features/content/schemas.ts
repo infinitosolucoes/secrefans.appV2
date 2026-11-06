@@ -33,9 +33,13 @@ export const postInputSchema = (userId: string) =>
       media: z
         .array(
           z.object({
+            kind: z.enum(["image", "video"]),
             path: z.string(),
+            poster: z.string().nullable(),
             width: z.number().int().min(1).max(10000),
             height: z.number().int().min(1).max(10000),
+            duration: z.number().int().min(1).max(3600).nullable(),
+            size: z.number().int().min(1).max(104857600),
           }),
         )
         .max(MAX_POST_IMAGES, `No máximo ${MAX_POST_IMAGES} fotos.`),
@@ -68,8 +72,13 @@ export const postInputSchema = (userId: string) =>
           path: ["media"],
           message: "Post para assinantes precisa de pelo menos uma foto.",
         });
-      const re = postMediaPathRe(userId, d.postId);
-      if (d.media.some((m) => !re.test(m.path)))
+      const webp = postMediaPathRe(userId, d.postId, "webp");
+      const mp4 = postMediaPathRe(userId, d.postId, "mp4");
+      const bad = (m: (typeof d.media)[number]) =>
+        m.kind === "image"
+          ? !webp.test(m.path) || m.poster !== null
+          : !mp4.test(m.path) || !m.poster || !webp.test(m.poster) || !m.duration;
+      if (d.media.some(bad))
         ctx.addIssue({ code: "custom", path: ["media"], message: "Arquivo de mídia inválido." });
     });
 

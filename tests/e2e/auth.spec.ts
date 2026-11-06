@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { USERS, confirmationLink, login } from "./helpers";
+import { USERS, confirmationLink, login, serviceClient } from "./helpers";
 
 test("cadastro → confirmação de e-mail → sessão ativa com papel fan", async ({ page }) => {
   const stamp = Date.now();
@@ -25,7 +25,17 @@ test("cadastro → confirmação de e-mail → sessão ativa com papel fan", asy
 
   await page.goto(await confirmationLink(email));
   await page.waitForURL("**/inicio");
-  await expect(page.getByText("Fã", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Feed" })).toBeVisible();
+
+  // Papel mínimo atribuído no cadastro (conferido no banco local).
+  const db = serviceClient();
+  const { data: profile } = await db
+    .from("profiles")
+    .select("id")
+    .eq("handle", `novo${stamp}`.slice(0, 30))
+    .single();
+  const { data: roles } = await db.from("user_roles").select("role").eq("user_id", profile!.id);
+  expect(roles?.map((r) => r.role)).toEqual(["fan"]);
 });
 
 test("cadastro valida maioridade e termos", async ({ page }) => {

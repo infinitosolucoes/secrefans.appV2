@@ -9,6 +9,7 @@ import {
   Card,
   CardTitle,
   EmptyState,
+  LinkTabs,
   PageHeader,
 } from "@/components/ui";
 import { Table, Td, THead, Tr } from "@/components/ui/Table";
@@ -98,7 +99,15 @@ export default async function Page({
         ))}
       </dl>
 
-      <h2 className="mb-4 type-heading text-ink">Publicações</h2>
+      <div className="mb-6">
+        <LinkTabs
+          items={[
+            { href: "/estudio", label: "Publicações" },
+            { href: "/estudio/pacotes", label: "Pacotes" },
+          ]}
+          active="/estudio"
+        />
+      </div>
       {list.length === 0 ? (
         <EmptyState
           title="Nenhuma publicação ainda"
@@ -124,7 +133,7 @@ export default async function Page({
                       {p.body || <span className="text-ink-muted">(sem texto)</span>}
                     </span>
                     <span className="block type-caption text-ink-muted">
-                      {mediaCount} {mediaCount === 1 ? "foto" : "fotos"}
+                      {mediaCount} {mediaCount === 1 ? "arquivo" : "arquivos"}
                     </span>
                   </Td>
                   <Td>

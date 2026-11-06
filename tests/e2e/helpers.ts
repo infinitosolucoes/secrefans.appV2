@@ -60,7 +60,12 @@ export async function confirmationLink(to: string): Promise<string> {
       const match = (full.HTML || full.Text).match(
         /https?:\/\/[^\s"'<>]+\/auth\/v1\/verify[^\s"'<>]+/,
       );
-      if (match) return match[0].replaceAll("&amp;", "&");
+      if (match) {
+        const link = match[0].replaceAll("&amp;", "&");
+        // Com E2E_PORT, o app de teste roda em outra porta: o retorno do e-mail precisa ir para ela.
+        const port = process.env.E2E_PORT;
+        return port ? link.replaceAll("localhost%3A3000", `localhost%3A${port}`) : link;
+      }
     }
     await new Promise((r) => setTimeout(r, 500));
   }

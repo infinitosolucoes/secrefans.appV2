@@ -3,7 +3,8 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/ui";
 import { ProfileForm } from "@/features/identity/forms";
-import { CreatorDetailsForm, ProfileImages } from "@/features/identity/ProfileExtras";
+import { CreatorDetailsForm, ProfileImages, SocialsForm } from "@/features/identity/ProfileExtras";
+import { parseSocials } from "@/features/identity/socials";
 import { requireUser } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 
@@ -14,7 +15,9 @@ export default async function Page() {
   const supabase = await createServerSupabase();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("handle, display_name, bio, visibility, avatar_path, banner_path, categories, links")
+    .select(
+      "handle, display_name, bio, visibility, avatar_path, banner_path, categories, links, socials",
+    )
     .eq("id", user.id)
     .single();
   const isCreator = user.roles.includes("creator") || user.creatorIntent;
@@ -50,6 +53,7 @@ export default async function Page() {
             }}
           />
         </section>
+        <SocialsForm socials={parseSocials(profile?.socials)} />
         {isCreator && (
           <CreatorDetailsForm categories={profile?.categories ?? []} links={profile?.links ?? []} />
         )}

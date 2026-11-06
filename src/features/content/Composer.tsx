@@ -1,18 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, X } from "lucide-react";
 import { Alert, Button, FieldError, Input, Label, RadioCard, Textarea } from "@/components/ui";
-import { browserSupabase } from "@/lib/supabase-browser";
-import { reencodeImage } from "@/lib/image";
 import {
-  ACCEPTED_IMAGE_TYPES,
-  MAX_IMAGE_DIMENSION,
   MAX_POST_BODY,
   MAX_POST_IMAGES,
-  MAX_SOURCE_IMAGE_BYTES,
-  POST_MEDIA_BUCKET,
   PPV_PRICE_MAX,
   PPV_PRICE_MIN,
   VISIBILITY_OPTIONS,
@@ -20,48 +13,18 @@ import {
 } from "./constants";
 import { parsePriceToCents } from "./schemas";
 import { savePostAction, type ActionResult } from "./actions";
-
-type Picked = { id: string; file: File; preview: string };
+import { MediaPicker, type PickedFile } from "./MediaPicker";
+import { removeUploaded, uploadMedia, type UploadedMedia } from "./upload";
 
 export function Composer({ userId }: { userId: string }) {
   const router = useRouter();
   const postId = useMemo(() => crypto.randomUUID(), []);
-  const [files, setFiles] = useState<Picked[]>([]);
+  const [files, setFiles] = useState<PickedFile[]>([]);
   const [visibility, setVisibility] = useState<PostVisibility>("free");
   const [pending, setPending] = useState(false);
   const [progress, setProgress] = useState("");
   const [state, setState] = useState<ActionResult | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Libera as pré-visualizações só ao sair da página (remoções individuais liberam na hora).
-  const filesRef = useRef(files);
-  filesRef.current = files;
-  useEffect(() => () => filesRef.current.forEach((f) => URL.revokeObjectURL(f.preview)), []);
-
-  function addFiles(list: FileList | null) {
-    if (!list) return;
-    const next: Picked[] = [];
-    let problem = "";
-    for (const file of Array.from(list)) {
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) problem = "Use fotos JPG, PNG ou WEBP.";
-      else if (file.size > MAX_SOURCE_IMAGE_BYTES) problem = "Cada foto pode ter até 25 MB.";
-      else next.push({ id: crypto.randomUUID(), file, preview: URL.createObjectURL(file) });
-    }
-    const merged = [...files, ...next].slice(0, MAX_POST_IMAGES);
-    if (files.length + next.length > MAX_POST_IMAGES)
-      problem = `No máximo ${MAX_POST_IMAGES} fotos.`;
-    setFiles(merged);
-    setState(problem ? { ok: false, errors: { media: problem } } : null);
-    if (inputRef.current) inputRef.current.value = "";
-  }
-
-  function removeFile(id: string) {
-    setFiles((prev) => {
-      const gone = prev.find((f) => f.id === id);
-      if (gone) URL.revokeObjectURL(gone.preview);
-      return prev.filter((f) => f.id !== id);
-    });
-  }
+  const [pickError, setPickError] = useState<string | null>(null);
 
   async function submit(publish: boolean, form: HTMLFormElement) {
     const fd = new FormData(form);
@@ -69,20 +32,13 @@ export function Composer({ userId }: { userId: string }) {
     const priceCents = visibility === "ppv" ? parsePriceToCents(fd.get("price")) : null;
     setPending(true);
     setState(null);
-    const uploaded: string[] = [];
-    const supabase = browserSupabase();
+    const uploaded: UploadedMedia[] = [];
     try {
-      const media = [];
       for (const [i, f] of files.entries()) {
-        setProgress(`Preparando foto ${i + 1} de ${files.length}…`);
-        const { blob, width, height } = await reencodeImage(f.file, MAX_IMAGE_DIMENSION);
-        const path = `${userId}/${postId}/${crypto.randomUUID()}.webp`;
-        const { error } = await supabase.storage
-          .from(POST_MEDIA_BUCKET)
-          .upload(path, blob, { contentType: "image/webp", upsert: false });
-        if (error) throw new Error("upload");
-        uploaded.push(path);
-        media.push({ path, width, height });
+        setProgress(
+          `Enviando ${f.kind === "video" ? "vídeo" : "foto"} ${i + 1} de ${files.length}…`,
+        );
+        uploaded.push(await uploadMedia(f.file, `${userId}/${postId}`));
       }
       setProgress("Salvando…");
       const result = await savePostAction({
@@ -91,20 +47,23 @@ export function Composer({ userId }: { userId: string }) {
         visibility,
         priceCents: priceCents === null ? null : Number.isNaN(priceCents) ? -1 : priceCents,
         publish,
-        media,
+        media: uploaded,
       });
       setState(result);
       if (result.ok) {
         router.push("/estudio?salvo=1");
         router.refresh();
-      } else if (uploaded.length) {
-        await supabase.storage.from(POST_MEDIA_BUCKET).remove(uploaded);
+      } else {
+        await removeUploaded(uploaded);
       }
-    } catch {
-      if (uploaded.length) await supabase.storage.from(POST_MEDIA_BUCKET).remove(uploaded);
+    } catch (err) {
+      await removeUploaded(uploaded);
       setState({
         ok: false,
-        message: "Falha ao enviar as fotos. Verifique a conexão e tente de novo.",
+        message:
+          err instanceof Error && err.message.length > 10
+            ? err.message
+            : "Falha no envio. Verifique a conexão e tente de novo.",
       });
     } finally {
       setPending(false);
@@ -141,51 +100,18 @@ export function Composer({ userId }: { userId: string }) {
       </div>
 
       <fieldset>
-        <legend className="mb-2 type-label text-ink">Fotos</legend>
+        <legend className="mb-2 type-label text-ink">Fotos e vídeos</legend>
         <p className="mb-3 type-caption text-ink-muted">
-          Até {MAX_POST_IMAGES} fotos. Antes do envio removemos localização e outros dados do
-          arquivo. Vídeos chegam na próxima etapa.
+          Até {MAX_POST_IMAGES} arquivos. Fotos JPG, PNG ou WEBP (removemos localização e outros
+          dados do arquivo). Vídeos MP4 de até 100 MB e 10 minutos, enviados como estão.
         </p>
-        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {files.map((f, i) => (
-            <li key={f.id} className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element -- pré-visualização local */}
-              <img
-                src={f.preview}
-                alt={`Foto ${i + 1} selecionada`}
-                className="aspect-square w-full rounded-sm border border-border object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removeFile(f.id)}
-                aria-label={`Remover foto ${i + 1}`}
-                className="absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-surface/90 text-ink hover:text-accent-text"
-              >
-                <X className="size-4" aria-hidden />
-              </button>
-            </li>
-          ))}
-          {files.length < MAX_POST_IMAGES && (
-            <li>
-              <label className="grid aspect-square w-full cursor-pointer place-items-center rounded-sm border border-dashed border-border text-ink-muted hover:border-accent hover:text-accent-text has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus">
-                <span className="flex flex-col items-center gap-1 type-caption">
-                  <ImagePlus className="size-6" aria-hidden />
-                  Adicionar
-                </span>
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                  multiple
-                  className="sr-only"
-                  onChange={(ev) => addFiles(ev.target.files)}
-                  aria-describedby={e.media ? "media-erro" : undefined}
-                />
-              </label>
-            </li>
-          )}
-        </ul>
-        <FieldError id="media-erro" message={e.media} />
+        <MediaPicker
+          files={files}
+          onChange={setFiles}
+          max={MAX_POST_IMAGES}
+          error={pickError ?? e.media}
+          onError={setPickError}
+        />
       </fieldset>
 
       <fieldset>

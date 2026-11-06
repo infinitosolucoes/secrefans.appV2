@@ -14,7 +14,12 @@ import {
   publicImageUrl,
 } from "@/features/content/constants";
 import { CATEGORIES } from "@/features/discovery/categories";
-import { setProfileImageAction, updateCreatorDetailsAction } from "./profile-extras-actions";
+import {
+  setProfileImageAction,
+  updateCreatorDetailsAction,
+  updateSocialsAction,
+} from "./profile-extras-actions";
+import { SOCIAL_NETWORKS, type Socials } from "./socials";
 
 export function ProfileImages({
   userId,
@@ -138,6 +143,54 @@ export function ProfileImages({
       <p className="type-caption text-ink-muted">
         Foto e capa são públicas. Removemos localização e outros dados do arquivo antes do envio.
       </p>
+    </section>
+  );
+}
+
+export function SocialsForm({ socials }: { socials: Socials }) {
+  const [state, action, pending] = useActionState(updateSocialsAction, null);
+  const e = state?.errors ?? {};
+  return (
+    <section aria-labelledby="redes" className="max-w-xl">
+      <h2 id="redes" className="mb-1 type-feature-title text-ink">
+        Redes sociais
+      </h2>
+      <p className="mb-4 type-caption text-ink-muted">
+        Aparecem no seu perfil público. Informe só o nome de usuário (ou cole o link do perfil).
+      </p>
+      <form action={action} className="flex flex-col gap-4">
+        {state?.message && <Alert tone={state.ok ? "success" : "error"}>{state.message}</Alert>}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {SOCIAL_NETWORKS.map((n) => (
+            <div key={n.key}>
+              <Label htmlFor={`social-${n.key}`}>{n.label}</Label>
+              <div className="relative">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-muted"
+                >
+                  @
+                </span>
+                <Input
+                  id={`social-${n.key}`}
+                  name={n.key}
+                  defaultValue={socials[n.key] ?? ""}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="usuario"
+                  className="pl-9"
+                  aria-invalid={e[n.key] ? true : undefined}
+                  aria-describedby={e[n.key] ? `social-${n.key}-erro` : undefined}
+                />
+              </div>
+              <FieldError id={`social-${n.key}-erro`} message={e[n.key]} />
+            </div>
+          ))}
+        </div>
+        <Button type="submit" loading={pending} className="self-start">
+          Salvar redes sociais
+        </Button>
+      </form>
     </section>
   );
 }
