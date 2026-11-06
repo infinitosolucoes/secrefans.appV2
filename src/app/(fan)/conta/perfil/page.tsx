@@ -16,7 +16,7 @@ export default async function Page() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "handle, display_name, bio, visibility, avatar_path, banner_path, categories, links, socials",
+      "handle, display_name, bio, visibility, avatar_path, banner_path, categories, links, socials, creator_type",
     )
     .eq("id", user.id)
     .single();
@@ -55,7 +55,11 @@ export default async function Page() {
         </section>
         <SocialsForm socials={parseSocials(profile?.socials)} />
         {isCreator && (
-          <CreatorDetailsForm categories={profile?.categories ?? []} links={profile?.links ?? []} />
+          <CreatorDetailsForm
+            creatorType={profile?.creator_type ?? null}
+            categories={profile?.categories ?? []}
+            links={profile?.links ?? []}
+          />
         )}
       </div>
     </AppShell>

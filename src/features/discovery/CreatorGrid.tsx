@@ -4,7 +4,7 @@ import { Avatar } from "@/components/domain/Avatar";
 import { EmptyState } from "@/components/ui";
 import { BANNER_BUCKET, publicImageUrl } from "@/features/content/constants";
 import { FollowButton } from "@/features/content/interactions";
-import { CATEGORIES } from "./categories";
+import { CATEGORIES, creatorTypeLabel } from "./categories";
 
 export interface CreatorSummary {
   id: string | null;
@@ -14,6 +14,7 @@ export interface CreatorSummary {
   avatar_path?: string | null;
   banner_path?: string | null;
   categories?: string[] | null;
+  creator_type?: string | null;
 }
 
 /** Grade de criadores (canvas Explorar): capa, avatar, nome verificado, categoria e Seguir. */
@@ -37,7 +38,12 @@ export function CreatorGrid({
       {creators.map((c) => {
         const name = c.display_name || c.handle || "";
         const banner = publicImageUrl(BANNER_BUCKET, c.banner_path);
-        const category = CATEGORIES.find((k) => k.slug === c.categories?.[0])?.label;
+        const category = [
+          creatorTypeLabel(c.creator_type),
+          CATEGORIES.find((k) => k.slug === c.categories?.[0])?.label,
+        ]
+          .filter(Boolean)
+          .join(" · ");
         return (
           <li
             key={c.handle}

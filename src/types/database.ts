@@ -281,14 +281,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"display_name": string,"handle": string,"id": string,"links": (string)[],"socials": NonNullable<Json>,"status": Database["public"]['Enums']["account_status"],"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"creator_type": string | null,"display_name": string,"handle": string,"id": string,"links": (string)[],"socials": NonNullable<Json>,"status": Database["public"]['Enums']["account_status"],"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Update: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Relationships: [
                     
@@ -376,14 +376,14 @@ isOneToOne: false
                   ]
                 },"public_profiles": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null,"links": (string)[],"socials": NonNullable<Json>
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_type": string | null,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null,"links": (string)[],"socials": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"creator_type"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
                          }
                         Update: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"creator_type"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
                          }
                         Relationships: [
                     

@@ -2,7 +2,7 @@
 -- Usuários do seed.sql: fan ...001, criador ...002.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(19);
 
 create or replace function pg_temp.as_user(uid uuid, aal text default 'aal1') returns void language plpgsql as $$
 begin
@@ -93,6 +93,13 @@ reset role;
 select pg_temp.as_anon();
 select is((select count(*)::int from public.public_packages where id = '44444444-0000-4000-a000-000000000001'), 0,
   'pacote arquivado sai da vitrine');
+reset role;
+
+-- Tipo de perfil: só valores da lista.
+select pg_temp.as_user('00000000-0000-4000-a000-000000000002');
+select throws_ok(
+  $$ update public.profiles set creator_type = 'outro_valor' where id = '00000000-0000-4000-a000-000000000002' $$,
+  '23514', null, 'tipo de perfil fora da lista é recusado');
 reset role;
 
 select * from finish();

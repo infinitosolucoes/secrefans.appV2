@@ -13,7 +13,7 @@ import {
   MAX_SOURCE_IMAGE_BYTES,
   publicImageUrl,
 } from "@/features/content/constants";
-import { CATEGORIES } from "@/features/discovery/categories";
+import { CATEGORIES, CREATOR_TYPES } from "@/features/discovery/categories";
 import {
   setProfileImageAction,
   updateCreatorDetailsAction,
@@ -196,21 +196,58 @@ export function SocialsForm({ socials }: { socials: Socials }) {
 }
 
 export function CreatorDetailsForm({
+  creatorType,
   categories,
   links,
 }: {
+  creatorType: string | null;
   categories: string[];
   links: string[];
 }) {
   const [state, action, pending] = useActionState(updateCreatorDetailsAction, null);
   const e = state?.errors ?? {};
+  const pill =
+    "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-pill border border-border px-4 type-label text-ink-muted has-[:checked]:border-accent has-[:checked]:text-accent-text has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus";
   return (
     <section aria-labelledby="categorias-links" className="max-w-xl">
-      <h2 id="categorias-links" className="mb-4 type-feature-title text-ink">
-        Categorias e links
+      <h2 id="categorias-links" className="mb-1 type-feature-title text-ink">
+        Perfil de criador
       </h2>
-      <form action={action} className="flex flex-col gap-4">
+      <p className="mb-4 type-caption text-ink-muted">
+        Ajuda os fãs a encontrar você no Explorar e aparece no seu perfil público.
+      </p>
+      <form action={action} className="flex flex-col gap-5">
         {state?.message && <Alert tone={state.ok ? "success" : "error"}>{state.message}</Alert>}
+        <fieldset aria-describedby={e.creatorType ? "creatorType-erro" : undefined}>
+          <legend className="mb-2 type-label text-ink">
+            Tipo de perfil (quem aparece no conteúdo)
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {CREATOR_TYPES.map((t) => (
+              <label key={t.slug} className={pill}>
+                <input
+                  type="radio"
+                  name="creatorType"
+                  value={t.slug}
+                  defaultChecked={creatorType === t.slug}
+                  className="sr-only"
+                />
+                {t.label}
+              </label>
+            ))}
+            <label className={pill}>
+              <input
+                type="radio"
+                name="creatorType"
+                value=""
+                defaultChecked={!creatorType}
+                className="sr-only"
+              />
+              Prefiro não informar
+            </label>
+          </div>
+          <FieldError id="creatorType-erro" message={e.creatorType} />
+        </fieldset>
         <fieldset aria-describedby={e.categories ? "categories-erro" : undefined}>
           <legend className="mb-2 type-label text-ink">Categorias (até 3)</legend>
           <div className="flex flex-wrap gap-2">
@@ -251,7 +288,7 @@ export function CreatorDetailsForm({
           <FieldError id="links-erro" message={e.links} />
         </div>
         <Button type="submit" loading={pending} className="self-start">
-          Salvar categorias e links
+          Salvar perfil de criador
         </Button>
       </form>
     </section>

@@ -9,7 +9,7 @@ import { UrlField } from "@/components/ui/UrlField";
 import { publicEnv } from "@/lib/env";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { getSessionUser } from "@/server/auth/session";
-import { CATEGORIES } from "@/features/discovery/categories";
+import { CATEGORIES, creatorTypeLabel, explorarHref } from "@/features/discovery/categories";
 import { BANNER_BUCKET, publicImageUrl } from "@/features/content/constants";
 import { PostCard } from "@/features/content/PostCard";
 import { FollowButton, ReportButton } from "@/features/content/interactions";
@@ -28,7 +28,7 @@ async function loadProfile(handle: string) {
   const { data } = await supabase
     .from("public_profiles")
     .select(
-      "id, handle, display_name, bio, is_creator, avatar_path, banner_path, categories, links, socials",
+      "id, handle, display_name, bio, is_creator, avatar_path, banner_path, categories, links, socials, creator_type",
     )
     .eq("handle", handle)
     .maybeSingle();
@@ -78,8 +78,9 @@ export default async function PublicProfile({
   const profileUrl = `${publicEnv().NEXT_PUBLIC_SITE_URL.replace(/^https?:\/\//, "")}/${profile.handle}`;
   const base = `/${profile.handle}`;
   const categories = (profile.categories ?? [])
-    .map((slug) => CATEGORIES.find((c) => c.slug === slug)?.label)
-    .filter(Boolean);
+    .map((slug) => CATEGORIES.find((c) => c.slug === slug))
+    .filter((c): c is (typeof CATEGORIES)[number] => Boolean(c));
+  const typeLabel = creatorTypeLabel(profile.creator_type);
 
   return (
     <AppShell user={user}>
@@ -110,10 +111,31 @@ export default async function PublicProfile({
               <BadgeCheck className="size-6 shrink-0 text-accent" aria-label="Criador verificado" />
             )}
           </h1>
-          <p className="type-label text-ink-muted">
-            @{profile.handle}
-            {categories.length > 0 && ` · ${categories.join(" · ")}`}
-          </p>
+          <p className="type-label text-ink-muted">@{profile.handle}</p>
+          {profile.is_creator && (typeLabel || categories.length > 0) && (
+            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Tipo de perfil e categorias">
+              {typeLabel && (
+                <li>
+                  <Link
+                    href={explorarHref({ tipo: profile.creator_type ?? undefined })}
+                    className="inline-flex h-7 items-center rounded-pill border border-accent px-3 type-caption font-semibold text-accent-text hover:bg-surface-alt"
+                  >
+                    {typeLabel}
+                  </Link>
+                </li>
+              )}
+              {categories.map((c) => (
+                <li key={c.slug}>
+                  <Link
+                    href={explorarHref({ categoria: c.slug })}
+                    className="inline-flex h-7 items-center rounded-pill border border-border px-3 type-caption text-ink-muted hover:border-ink-muted hover:text-ink"
+                  >
+                    {c.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
           {profile.is_creator && (
             <p className="mt-1 type-caption text-ink-muted">
               <strong className="text-ink">{stats?.posts ?? 0}</strong> publicações ·{" "}

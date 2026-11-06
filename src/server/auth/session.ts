@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "./supabase";
 import { hasPermission, isStaffRole, type AppRole } from "@/server/authorization/roles";
@@ -16,7 +17,14 @@ export interface SessionUser {
   aal: "aal1" | "aal2";
   /** Usuário tem fator MFA verificado (precisa só do desafio). */
   hasMfaFactor: boolean;
+  /** Super Admin que também é criador pode alternar a visão entre criador e fã. */
+  canSwitchView: boolean;
+  /** Visão atual quando canSwitchView (fora disso, sempre "criador" ou "fa" conforme o papel). */
+  viewMode: ViewMode;
 }
+
+export type ViewMode = "criador" | "fa";
+export const VIEW_MODE_COOKIE = "sf_modo";
 
 /** Usuário validado no servidor de Auth (getUser), com perfil e papéis. Memoizado por request. */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
@@ -35,7 +43,15 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   ]);
   if (!profile) return null;
 
-  const roleList = (roles ?? []) as AppRole[];
+  const realRoles = (roles ?? []) as AppRole[];
+  // Alternância de visão: só para quem é Super Admin E criador. Na visão "fã" a interface trata a
+  // conta como fã (sem Studio). Não concede nada: o banco continua decidindo pelos papéis reais.
+  const canSwitchView = realRoles.includes("super_admin") && realRoles.includes("creator");
+  const cookieMode = (await cookies()).get(VIEW_MODE_COOKIE)?.value;
+  const viewMode: ViewMode =
+    canSwitchView && cookieMode === "fa" ? "fa" : realRoles.includes("creator") ? "criador" : "fa";
+  const roleList =
+    canSwitchView && viewMode === "fa" ? realRoles.filter((r) => r !== "creator") : realRoles;
   return {
     id: auth.user.id,
     email: auth.user.email ?? "",
@@ -43,7 +59,9 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     displayName: profile.display_name,
     roles: roleList,
     isStaff: isStaffRole(roleList),
-    creatorIntent: profile.creator_intent,
+    canSwitchView,
+    viewMode,
+    creatorIntent: canSwitchView && viewMode === "fa" ? false : profile.creator_intent,
     status: profile.status,
     aal: aal?.currentLevel === "aal2" ? "aal2" : "aal1",
     hasMfaFactor: aal?.nextLevel === "aal2",

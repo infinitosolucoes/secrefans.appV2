@@ -80,6 +80,25 @@ test("visitante vê a foto grátis e o PPV bloqueado sem URL de mídia", async (
   await ctx.close();
 });
 
+test("criador define tipo de perfil e categoria; Explorar filtra", async ({ page }) => {
+  await login(page, USERS.creator.email);
+  await page.goto("/conta/perfil");
+  await page.getByText("Casal", { exact: true }).click();
+  const fitness = page.getByLabel("Fitness", { exact: true });
+  if (!(await fitness.isChecked())) await page.getByText("Fitness", { exact: true }).click();
+  await page.getByRole("button", { name: "Salvar perfil de criador" }).click();
+  await expect(page.getByText("Tipo de perfil, categorias e links atualizados.")).toBeVisible();
+
+  await page.goto("/criador_teste");
+  await expect(page.getByRole("link", { name: "Casal", exact: true })).toBeVisible();
+
+  await page.goto("/explorar?tipo=casal&categoria=fitness");
+  await expect(page.getByRole("heading", { name: "Casal · Fitness" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Criador Teste/ }).first()).toBeVisible();
+  await page.goto("/explorar?tipo=homem");
+  await expect(page.getByText("Nenhum criador em Homem ainda")).toBeVisible();
+});
+
 test("fã cadastra redes sociais e elas aparecem no perfil público", async ({ page }) => {
   await login(page, USERS.fan.email);
   await page.goto("/conta/perfil");

@@ -14,7 +14,9 @@ export default async function Page() {
     getSessionUser(),
     supabase
       .from("public_profiles")
-      .select("id, handle, display_name, is_creator, avatar_path, banner_path, categories")
+      .select(
+        "id, handle, display_name, is_creator, avatar_path, banner_path, categories, creator_type",
+      )
       .eq("is_creator", true)
       .order("created_at", { ascending: false })
       .limit(96),

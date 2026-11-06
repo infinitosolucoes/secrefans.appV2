@@ -21,6 +21,7 @@ import { SearchPill } from "@/components/ui/brand";
 import { cn } from "@/lib/cn";
 import { Logo } from "./Logo";
 import { signOutAction } from "@/features/identity/actions";
+import { switchViewModeAction } from "@/features/identity/view-mode-actions";
 import type { SessionUser } from "@/server/auth/session";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
@@ -54,6 +55,38 @@ const topLinks = [
   { href: "/explorar", label: "Explorar" },
   { href: "/criar-conta?perfil=criador", label: "Seja Criador", visitorOnly: true },
 ];
+
+/** Alternância criador/fã (só Super Admin que também é criador). Segmentado com as duas opções. */
+function ViewModeSwitch({ mode }: { mode: "criador" | "fa" }) {
+  return (
+    <form
+      action={switchViewModeAction}
+      className="flex items-center rounded-pill border border-border bg-surface-alt p-0.5"
+      aria-label="Ver o site como"
+    >
+      {(
+        [
+          { value: "criador", label: "Criador" },
+          { value: "fa", label: "Fã" },
+        ] as const
+      ).map((o) => (
+        <button
+          key={o.value}
+          type="submit"
+          name="mode"
+          value={o.value}
+          aria-pressed={mode === o.value}
+          className={cn(
+            "h-8 rounded-pill px-3 type-caption font-semibold transition",
+            mode === o.value ? "bg-rosa-profundo text-on-accent" : "text-ink-muted hover:text-ink",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </form>
+  );
+}
 
 /** Topbar do DS: logo, busca em pílula, links (ativo em accent-text sublinhado), Entrar e Criar Conta. */
 export function Topbar({ user, active }: { user: SessionUser | null; active?: string }) {
@@ -95,6 +128,7 @@ export function Topbar({ user, active }: { user: SessionUser | null; active?: st
           </Link>
           {user ? (
             <>
+              {user.canSwitchView && <ViewModeSwitch mode={user.viewMode} />}
               {user.isStaff && (
                 <Link href="/super-admin" className={buttonClasses("ghost", "sm")}>
                   <ShieldCheck className="size-4" aria-hidden />

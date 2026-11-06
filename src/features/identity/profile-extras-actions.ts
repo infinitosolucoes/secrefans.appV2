@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireUser } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { AVATAR_BUCKET, BANNER_BUCKET, profileImagePathRe } from "@/features/content/constants";
-import { CATEGORIES } from "@/features/discovery/categories";
+import { CATEGORIES, CREATOR_TYPES, type CreatorType } from "@/features/discovery/categories";
 import { normalizeSocialHandle, SOCIAL_HANDLE_RE, SOCIAL_NETWORKS } from "./socials";
 
 export interface ExtrasResult {
@@ -45,7 +45,10 @@ export async function setProfileImageAction(
 
 const SLUGS = CATEGORIES.filter((c) => c.slug !== "todos").map((c) => c.slug);
 
+const TYPES = CREATOR_TYPES.map((t) => t.slug) as [CreatorType, ...CreatorType[]];
+
 const detailsSchema = z.object({
+  creatorType: z.enum(TYPES).nullable(),
   categories: z.array(z.enum(SLUGS as [string, ...string[]])).max(3, "Escolha até 3 categorias."),
   links: z
     .array(
@@ -86,6 +89,7 @@ export async function updateCreatorDetailsAction(
 ): Promise<ExtrasResult> {
   const user = await requireUser("/conta/perfil");
   const parsed = detailsSchema.safeParse({
+    creatorType: String(fd.get("creatorType") ?? "") || null,
     categories: fd.getAll("categories").map(String),
     links: fd
       .getAll("links")
@@ -100,9 +104,13 @@ export async function updateCreatorDetailsAction(
   const supabase = await createServerSupabase();
   const { error } = await supabase
     .from("profiles")
-    .update({ categories: parsed.data.categories, links: parsed.data.links })
+    .update({
+      creator_type: parsed.data.creatorType,
+      categories: parsed.data.categories,
+      links: parsed.data.links,
+    })
     .eq("id", user.id);
   if (error) return { ok: false, message: "Não foi possível salvar." };
   revalidatePath("/", "layout");
-  return { ok: true, message: "Categorias e links atualizados." };
+  return { ok: true, message: "Tipo de perfil, categorias e links atualizados." };
 }
