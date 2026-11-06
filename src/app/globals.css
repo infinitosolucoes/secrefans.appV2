@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+@theme inline {
+  --font-sans: var(--font-montserrat), Montserrat, Gotham, system-ui, sans-serif;
+  --font-ds-script: var(--font-yellowtail), Yellowtail, "Dancing Script", cursive;
+}
+
+@layer base {
+  html {
+    background: var(--surface);
+    color: var(--ink);
+  }
+  body {
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--rosa-profundo);
+    color: #fff;
+  }
+}
+
+/*
+ * Versões fluidas dos estilos de destaque do DS (hero 72px, hero-italic 56px, script-accent 40px):
+ * mesmos pesos/leading/tracking, tamanho escala até o valor do DS para não estourar no mobile.
+ */
+@utility type-hero-fluid {
+  @apply type-hero;
+  font-size: clamp(40px, 8vw, 72px);
+}
+@utility type-hero-italic-fluid {
+  @apply type-hero-italic;
+  font-size: clamp(28px, 7.5vw, 56px);
+}
+@utility type-script-fluid {
+  @apply type-script-accent;
+  font-size: clamp(28px, 4.5vw, 40px);
+}
+
+@utility gradient-cta {
+  background-image: linear-gradient(90deg, var(--rosa-neon), var(--rosa-profundo));
+}
+@utility gradient-text {
+  background-image: linear-gradient(90deg, var(--rosa-claro), var(--rosa-neon));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}

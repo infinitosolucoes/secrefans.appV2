@@ -1,0 +1,251 @@
+/* Secretfans — gerado de design/tokens.json por scripts/build-tokens.ts. Não editar. */
+
+:root {
+  color-scheme: dark;
+  --rosa-neon: #ff0a78;
+  --rosa-claro: #ff4f8b;
+  --rosa-profundo: #e0005e;
+  --noite: #0b0205;
+  --vinho: #1a0710;
+  --vinho-borda: #7a1f43;
+  --vermelho-claro: #ee314a;
+  --vermelho-escuro: #c9343f;
+  --roxo: #752f58;
+  --cinza-roxeado: #4d2e47;
+  --branco: #ffffff;
+  --cinza-logo: #ababab;
+  --preto: #000000;
+  --surface: #0b0205;
+  --surface-alt: #1a0710;
+  --ink: #ffffff;
+  --ink-muted: #c9b3bd;
+  --accent: #ff0a78;
+  --on-accent: #ffffff;
+  --accent-text: #ff4f8b;
+  --brand-deep: #1a0710;
+  --border: #7a1f43;
+  --focus: #ffffff;
+  --success: #5ee39a;
+  --warning: #ffc857;
+  --danger: #ff6b6b;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-10: 40px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --glow-sm: 0 0 12px rgba(255,10,120,0.45);
+  --glow-lg: 0 0 32px rgba(255,10,120,0.6);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --rosa-neon: #ff0a78;
+  --rosa-claro: #ff4f8b;
+  --rosa-profundo: #e0005e;
+  --noite: #0b0205;
+  --vinho: #1a0710;
+  --vinho-borda: #7a1f43;
+  --vermelho-claro: #ee314a;
+  --vermelho-escuro: #c9343f;
+  --roxo: #752f58;
+  --cinza-roxeado: #4d2e47;
+  --branco: #ffffff;
+  --cinza-logo: #ababab;
+  --preto: #000000;
+  --surface: #ffffff;
+  --surface-alt: #f7f0f4;
+  --ink: #2b1a27;
+  --ink-muted: #6b5a66;
+  --accent: #c9343f;
+  --on-accent: #ffffff;
+  --accent-text: #c9343f;
+  --brand-deep: #752f58;
+  --border: #e3d6de;
+  --focus: #752f58;
+  --success: #1d6b43;
+  --warning: #7a4f00;
+  --danger: #b3261e;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --rosa-neon: #ff0a78;
+  --rosa-claro: #ff4f8b;
+  --rosa-profundo: #e0005e;
+  --noite: #0b0205;
+  --vinho: #1a0710;
+  --vinho-borda: #7a1f43;
+  --vermelho-claro: #ee314a;
+  --vermelho-escuro: #c9343f;
+  --roxo: #752f58;
+  --cinza-roxeado: #4d2e47;
+  --branco: #ffffff;
+  --cinza-logo: #ababab;
+  --preto: #000000;
+  --surface: #241520;
+  --surface-alt: #4d2e47;
+  --ink: #ffffff;
+  --ink-muted: #c4b3bf;
+  --accent: #ee314a;
+  --on-accent: #ffffff;
+  --accent-text: #f4a3b3;
+  --brand-deep: #752f58;
+  --border: #5e3f58;
+  --focus: #ffffff;
+  --success: #5ee39a;
+  --warning: #ffc857;
+  --danger: #ff8a8a;
+}
+
+@theme inline {
+  --color-rosa-neon: var(--rosa-neon);
+  --color-rosa-claro: var(--rosa-claro);
+  --color-rosa-profundo: var(--rosa-profundo);
+  --color-noite: var(--noite);
+  --color-vinho: var(--vinho);
+  --color-vinho-borda: var(--vinho-borda);
+  --color-vermelho-claro: var(--vermelho-claro);
+  --color-vermelho-escuro: var(--vermelho-escuro);
+  --color-roxo: var(--roxo);
+  --color-cinza-roxeado: var(--cinza-roxeado);
+  --color-branco: var(--branco);
+  --color-cinza-logo: var(--cinza-logo);
+  --color-preto: var(--preto);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-text: var(--accent-text);
+  --color-brand-deep: var(--brand-deep);
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --shadow-glow-sm: 0 0 12px rgba(255,10,120,0.45);
+  --shadow-glow-lg: 0 0 32px rgba(255,10,120,0.6);
+  --font-ds-sans: Montserrat, Gotham, system-ui, sans-serif;
+  --font-ds-display: "New Machines", "Archivo Black", Impact, sans-serif;
+  --font-ds-script: Yellowtail, "Dancing Script", cursive;
+  --font-ds-logotype: Secretfont, Quicksand, "Tw Cen MT", sans-serif;
+}
+
+@utility type-hero {
+  font-family: var(--font-sans);
+  font-size: 72px;
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+@utility type-hero-italic {
+  font-family: var(--font-sans);
+  font-size: 56px;
+  line-height: 0.95;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+@utility type-tagline {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+
+@utility type-cta {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+@utility type-feature-title {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+@utility type-script-accent {
+  font-family: var(--font-ds-script);
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+@utility type-lettering-xl {
+  font-family: var(--font-ds-display);
+  font-size: 72px;
+  line-height: 0.95;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+@utility type-lettering-md {
+  font-family: var(--font-ds-display);
+  font-size: 40px;
+  line-height: 0.95;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+@utility type-heading {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+}
+
+@utility type-section-title {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+@utility type-body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+@utility type-body-strong {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+@utility type-label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+@utility type-caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
