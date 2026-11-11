@@ -104,6 +104,7 @@ export interface PublicPackage {
   photoCount: number;
   videoCount: number;
   version: number;
+  versionId: string;
 }
 
 export async function getCreatorPackages(creatorId: string): Promise<PublicPackage[]> {
@@ -111,7 +112,7 @@ export async function getCreatorPackages(creatorId: string): Promise<PublicPacka
   const { data } = await supabase
     .from("public_packages")
     .select(
-      "id, title, description, price_cents, audience, cover_path, photo_count, video_count, version",
+      "id, title, description, price_cents, audience, cover_path, photo_count, video_count, version, version_id",
     )
     .eq("creator_id", creatorId)
     .order("published_at", { ascending: false })
@@ -126,5 +127,6 @@ export async function getCreatorPackages(creatorId: string): Promise<PublicPacka
     photoCount: p.photo_count ?? 0,
     videoCount: p.video_count ?? 0,
     version: p.version ?? 1,
+    versionId: p.version_id ?? "",
   }));
 }

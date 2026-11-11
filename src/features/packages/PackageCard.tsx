@@ -1,14 +1,25 @@
+import Link from "next/link";
 import { Crown, Lock } from "lucide-react";
+import { buttonClasses } from "@/components/ui";
 import {
   formatBRL,
   formatMediaCount,
   PACKAGE_COVER_BUCKET,
   publicImageUrl,
 } from "@/features/content/constants";
+import { checkoutHref } from "@/features/commerce/constants";
 import type { PublicPackage } from "./queries";
 
 /** Card de pacote na vitrine (canvas Perfil): capa ou prévia protegida, título, itens e preço. */
-export function PackageCard({ pkg }: { pkg: PublicPackage }) {
+export function PackageCard({
+  pkg,
+  owned = false,
+  isOwner = false,
+}: {
+  pkg: PublicPackage;
+  owned?: boolean;
+  isOwner?: boolean;
+}) {
   const cover = publicImageUrl(PACKAGE_COVER_BUCKET, pkg.coverPath);
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-border bg-surface-alt p-3.5">
@@ -40,14 +51,18 @@ export function PackageCard({ pkg }: { pkg: PublicPackage }) {
       </div>
       <div className="mt-auto flex items-center justify-between gap-3">
         <span className="text-lg font-extrabold text-accent-text">{formatBRL(pkg.priceCents)}</span>
-        <button
-          type="button"
-          disabled
-          className="inline-flex h-9 items-center rounded-pill border border-border px-4 type-caption font-semibold text-ink-muted"
-          title="A compra de pacotes chega com os pagamentos"
-        >
-          Compra em breve
-        </button>
+        {owned || isOwner ? (
+          <Link
+            href={isOwner ? `/estudio/pacotes/${pkg.id}` : `/biblioteca/pacote/${pkg.versionId}`}
+            className={buttonClasses("secondary", "sm")}
+          >
+            {isOwner ? "Editar" : "Abrir"}
+          </Link>
+        ) : (
+          <Link href={checkoutHref("pacote", pkg.id)} className={buttonClasses("primary", "sm")}>
+            Comprar pacote
+          </Link>
+        )}
       </div>
     </article>
   );

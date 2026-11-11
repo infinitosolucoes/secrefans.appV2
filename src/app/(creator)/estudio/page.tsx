@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Lock, Plus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
+import { StudioTabs } from "@/features/commerce/StudioTabs";
 import {
   Alert,
   Badge,
@@ -9,7 +10,6 @@ import {
   Card,
   CardTitle,
   EmptyState,
-  LinkTabs,
   PageHeader,
 } from "@/components/ui";
 import { Table, Td, THead, Tr } from "@/components/ui/Table";
@@ -99,15 +99,7 @@ export default async function Page({
         ))}
       </dl>
 
-      <div className="mb-6">
-        <LinkTabs
-          items={[
-            { href: "/estudio", label: "Publicações" },
-            { href: "/estudio/pacotes", label: "Pacotes" },
-          ]}
-          active="/estudio"
-        />
-      </div>
+      <StudioTabs active="/estudio" />
       {list.length === 0 ? (
         <EmptyState
           title="Nenhuma publicação ainda"

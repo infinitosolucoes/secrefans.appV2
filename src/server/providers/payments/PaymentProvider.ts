@@ -1,6 +1,7 @@
 /**
  * Contrato interno de provedor de pagamentos (spec §7.3).
- * Sem implementação nesta rodada: Asaas/BaaS depende de aprovação formal por escrito.
+ * S4: implementação "simulado" para desenvolvimento/homologação (simulated.ts).
+ * Asaas/BaaS (S5) depende de aprovação formal por escrito.
  * Ver docs/adr/0003-payment-provider-abstraction.md.
  */
 export type Cents = number;
@@ -24,6 +25,10 @@ export interface ProviderChargeResult {
   providerChargeId: string;
   status: "pending" | "confirmed" | "failed" | "refunded" | "chargeback";
   amount: Cents;
+  /** Pix: código copia-e-cola (e QR, quando o provedor devolver). */
+  pix?: { copyPaste: string; qrCodeBase64?: string; expiresAt?: string };
+  /** Cartão: URL do formulário seguro do provedor (dados do cartão nunca passam pela Secretfans). */
+  checkoutUrl?: string;
 }
 export interface TransferInput {
   fromAccountId: string;
@@ -44,6 +49,9 @@ export interface VerifiedProviderEvent {
   eventId: string;
   type: string;
   payload: unknown;
+  /** Normalizado para o banco: referência da cobrança e o novo status. */
+  chargeId: string;
+  status: "paid" | "failed" | "refunded" | "chargeback";
 }
 
 export interface PaymentProvider {

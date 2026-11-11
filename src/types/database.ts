@@ -37,6 +37,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"commission_rules": {
+                  Row: {
+                    "applies_to_tips": boolean,"created_at": string,"decided_at": string | null,"decided_by": string | null,"decision_reason": string | null,"effective_from": string,"id": string,"proposed_by": string | null,"rate_bps": number,"reason": string,"status": Database["public"]['Enums']["commission_rule_status"],"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "applies_to_tips"?: boolean,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"decision_reason"?: string | null,"effective_from": string,"id"?: string,"proposed_by"?: string | null,"rate_bps": number,"reason": string,"status"?: Database["public"]['Enums']["commission_rule_status"],"version": number
+                  }
+                  Update: {
+                    "applies_to_tips"?: boolean,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"decision_reason"?: string | null,"effective_from"?: string,"id"?: string,"proposed_by"?: string | null,"rate_bps"?: number,"reason"?: string,"status"?: Database["public"]['Enums']["commission_rule_status"],"version"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"consent_records": {
                   Row: {
                     "consent_type": string,"created_at": string,"granted": boolean,"id": string,"user_id": string,"version": string
@@ -51,6 +65,26 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"creator_commission_acceptances": {
+                  Row: {
+                    "accepted_at": string,"creator_id": string,"rule_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_at"?: string,"creator_id": string,"rule_id": string
+                  }
+                  Update: {
+                    "accepted_at"?: string,"creator_id"?: string,"rule_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "creator_commission_acceptances_rule_id_fkey"
+      columns: ["rule_id"]
+isOneToOne: false
+      referencedRelation: "commission_rules"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"creator_verifications": {
                   Row: {
                     "appeal_text": string | null,"appealed_at": string | null,"birth_date": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"decision_reason": string | null,"document_back_path": string | null,"document_front_path": string,"id": string,"legal_name": string,"selfie_path": string,"status": Database["public"]['Enums']["verification_status"],"submitted_at": string,"updated_at": string,"user_id": string
@@ -64,6 +98,26 @@ export type Database = {
                   }
                   Relationships: [
                     
+                  ]
+                },"entitlements": {
+                  Row: {
+                    "granted_at": string,"id": string,"kind": string,"order_id": string,"revoked_at": string | null,"target_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "granted_at"?: string,"id"?: string,"kind": string,"order_id": string,"revoked_at"?: string | null,"target_id": string,"user_id": string
+                  }
+                  Update: {
+                    "granted_at"?: string,"id"?: string,"kind"?: string,"order_id"?: string,"revoked_at"?: string | null,"target_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "entitlements_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: true
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"feature_flags": {
                   Row: {
@@ -93,6 +147,26 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"orders": {
+                  Row: {
+                    "buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at": string,"creator_id": string,"creator_net_cents": number,"description": string,"external_fees_cents": number,"gross_cents": number,"id": string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at": string | null,"provider": string | null,"provider_ref": string | null,"status": Database["public"]['Enums']["order_status"],"target_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at"?: string,"creator_id": string,"creator_net_cents": number,"description"?: string,"external_fees_cents"?: number,"gross_cents": number,"id"?: string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "buyer_id"?: string,"commission_bps"?: number,"commission_cents"?: number,"commission_rule_id"?: string,"commission_rule_version"?: number,"created_at"?: string,"creator_id"?: string,"creator_net_cents"?: number,"description"?: string,"external_fees_cents"?: number,"gross_cents"?: number,"id"?: string,"idempotency_key"?: string,"kind"?: Database["public"]['Enums']["order_kind"],"method"?: string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "orders_commission_rule_id_fkey"
+      columns: ["commission_rule_id"]
+isOneToOne: false
+      referencedRelation: "commission_rules"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"package_items": {
                   Row: {
                     "duration_seconds": number | null,"height": number | null,"id": string,"kind": string,"position": number,"poster_path": string | null,"size_bytes": number | null,"storage_path": string,"version_id": string,"width": number | null
@@ -111,6 +185,12 @@ export type Database = {
 isOneToOne: false
       referencedRelation: "package_versions"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "package_items_version_id_fkey"
+      columns: ["version_id"]
+isOneToOne: false
+      referencedRelation: "public_packages"
+      referencedColumns: ["version_id"]
     }
                   ]
                 },"package_versions": {
@@ -156,6 +236,32 @@ isOneToOne: false
       columns: ["current_version_id"]
 isOneToOne: false
       referencedRelation: "package_versions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "packages_current_version_fk"
+      columns: ["current_version_id"]
+isOneToOne: false
+      referencedRelation: "public_packages"
+      referencedColumns: ["version_id"]
+    }
+                  ]
+                },"payment_events": {
+                  Row: {
+                    "event_id": string,"id": string,"order_id": string | null,"payload": NonNullable<Json>,"provider": string,"received_at": string,"type": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "event_id": string,"id"?: string,"order_id"?: string | null,"payload"?: NonNullable<Json>,"provider": string,"received_at"?: string,"type": string
+                  }
+                  Update: {
+                    "event_id"?: string,"id"?: string,"order_id"?: string | null,"payload"?: NonNullable<Json>,"provider"?: string,"received_at"?: string,"type"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "payment_events_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
       referencedColumns: ["id"]
     }
                   ]
@@ -281,14 +387,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"creator_type": string | null,"display_name": string,"handle": string,"id": string,"links": (string)[],"socials": NonNullable<Json>,"status": Database["public"]['Enums']["account_status"],"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"creator_type": string | null,"display_name": string,"handle": string,"id": string,"links": (string)[],"socials": NonNullable<Json>,"status": Database["public"]['Enums']["account_status"],"subscription_price_cents": number | null,"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"subscription_price_cents"?: number | null,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Update: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"subscription_price_cents"?: number | null,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Relationships: [
                     
@@ -325,6 +431,26 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "permissions"
       referencedColumns: ["key"]
+    }
+                  ]
+                },"subscriptions": {
+                  Row: {
+                    "cancel_at_period_end": boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id": string,"last_order_id": string | null,"price_cents": number,"started_at": string,"status": Database["public"]['Enums']["subscription_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cancel_at_period_end"?: boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id"?: string,"last_order_id"?: string | null,"price_cents": number,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "cancel_at_period_end"?: boolean,"creator_id"?: string,"current_period_end"?: string,"fan_id"?: string,"id"?: string,"last_order_id"?: string | null,"price_cents"?: number,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "subscriptions_last_order_id_fkey"
+      columns: ["last_order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
     }
                   ]
                 },"user_blocks": {
@@ -368,7 +494,7 @@ isOneToOne: false
                   ]
                 },"public_packages": {
                   Row: {
-                    "audience": Database["public"]['Enums']["package_audience"],"category": string | null,"cover_path": string | null,"creator_id": string,"description": string,"display_name": string,"handle": string,"id": string,"photo_count": number | null,"price_cents": number,"published_at": string | null,"title": string,"version": number,"version_published_at": string | null,"video_count": number | null
+                    "audience": Database["public"]['Enums']["package_audience"],"category": string | null,"cover_path": string | null,"creator_id": string,"description": string,"display_name": string,"handle": string,"id": string,"photo_count": number | null,"price_cents": number,"published_at": string | null,"title": string,"version": number,"version_id": string,"version_published_at": string | null,"video_count": number | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -376,14 +502,14 @@ isOneToOne: false
                   ]
                 },"public_profiles": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_type": string | null,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null,"links": (string)[],"socials": NonNullable<Json>
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_type": string | null,"display_name": string,"handle": string,"id": string,"is_creator": boolean | null,"links": (string)[],"socials": NonNullable<Json>,"subscription_price_cents": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"creator_type"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"creator_type"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null,"subscription_price_cents"?: number | null
                          }
                         Update: {
-                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"creator_type"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null
+                           "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string | null,"categories"?: (string)[] | null,"created_at"?: string | null,"creator_type"?: string | null,"display_name"?: string | null,"handle"?: string | null,"id"?: string | null,"is_creator"?: never,"links"?: (string)[] | null,"socials"?: Json | null,"subscription_price_cents"?: number | null
                          }
                         Relationships: [
                     
@@ -391,7 +517,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "admin_dashboard_counts":
+            "accept_commission_rule":
+{ Args: { "p_rule_id": string }; Returns: undefined
+                           },
+"admin_dashboard_counts":
 { Args: Record<PropertyKey, never>; Returns: {
               "audit_events_24h": number,"creators_total": number,"pending_verifications": number,"users_total": number
             }[]
@@ -409,16 +538,52 @@ isOneToOne: false
 "appeal_creator_verification":
 { Args: { "p_text": string,"p_verification_id": string }; Returns: undefined
                            },
+"attach_order_charge":
+{ Args: { "p_order_id": string,"p_provider": string,"p_provider_ref": string }; Returns: undefined
+                           },
 "can_follow":
 { Args: { "p_creator_id": string }; Returns: boolean
                            },
 "can_view_post_media":
 { Args: { "p_post_id": string }; Returns: boolean
                            },
+"cancel_subscription":
+{ Args: { "p_creator_id": string }; Returns: undefined
+                           },
+"confirm_payment":
+{ Args: { "p_event_id": string,"p_payload"?: Json,"p_provider": string,"p_provider_ref": string,"p_status": string }; Returns: string
+                           },
+"create_order":
+{ Args: { "p_amount_cents": number,"p_idempotency_key": string,"p_kind": Database["public"]['Enums']["order_kind"],"p_method": string,"p_target_id": string }; Returns: string
+                           },
 "creator_stats":
 { Args: { "p_creator_id": string }; Returns: {
               "followers": number,"posts": number
             }[]
+                           },
+"current_commission_rule":
+{ Args: { "p_at"?: string }; Returns: {
+              "applies_to_tips": boolean,
+"created_at": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"decision_reason": string | null,
+"effective_from": string,
+"id": string,
+"proposed_by": string | null,
+"rate_bps": number,
+"reason": string,
+"status": Database["public"]['Enums']["commission_rule_status"],
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "commission_rules"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"decide_commission_rule":
+{ Args: { "p_approve": boolean,"p_reason": string,"p_rule_id": string }; Returns: undefined
                            },
 "decide_creator_verification":
 { Args: { "p_reason": string,"p_status": Database["public"]['Enums']["verification_status"],"p_verification_id": string }; Returns: undefined
@@ -434,6 +599,12 @@ isOneToOne: false
                            },
 "handle_available":
 { Args: { "p_handle": string }; Returns: boolean
+                           },
+"has_active_subscription":
+{ Args: { "p_creator_id": string }; Returns: boolean
+                           },
+"has_entitlement":
+{ Args: { "p_kind": string,"p_target_id": string }; Returns: boolean
                            },
 "has_permission":
 { Args: { "permission": string }; Returns: boolean
@@ -456,6 +627,11 @@ isOneToOne: false
 "my_roles":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["app_role"][]
                            },
+"package_items_for":
+{ Args: { "p_version_id": string }; Returns: {
+              "duration_seconds": number,"height": number,"kind": string,"position": number,"poster_path": string,"storage_path": string,"width": number
+            }[]
+                           },
 "post_card_visible":
 { Args: { "p_post_id": string }; Returns: boolean
                            },
@@ -463,6 +639,9 @@ isOneToOne: false
 { Args: { "p_post_id": string }; Returns: {
               "duration_seconds": number,"height": number,"kind": string,"position": number,"poster_path": string,"storage_path": string,"width": number
             }[]
+                           },
+"propose_commission_rule":
+{ Args: { "p_applies_to_tips": boolean,"p_effective_from": string,"p_rate_bps": number,"p_reason": string }; Returns: number
                            },
 "revoke_role":
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
@@ -484,7 +663,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","package_audience": "all"|"subscribers","package_status": "draft"|"published"|"archived"|"removed","package_version_status": "draft"|"published"|"superseded","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile","verification_status": "pending"|"approved"|"rejected"|"suspended"
+            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","commission_rule_status": "pending_approval"|"approved"|"rejected","order_kind": "subscription"|"ppv"|"package"|"tip","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded"|"chargeback","package_audience": "all"|"subscribers","package_status": "draft"|"published"|"archived"|"removed","package_version_status": "draft"|"published"|"superseded","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile","subscription_status": "active"|"canceled"|"expired","verification_status": "pending"|"approved"|"rejected"|"suspended"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -604,7 +783,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"package_audience": ["all", "subscribers"],"package_status": ["draft", "published", "archived", "removed"],"package_version_status": ["draft", "published", "superseded"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile"],"verification_status": ["pending", "approved", "rejected", "suspended"]
+            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"commission_rule_status": ["pending_approval", "approved", "rejected"],"order_kind": ["subscription", "ppv", "package", "tip"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded", "chargeback"],"package_audience": ["all", "subscribers"],"package_status": ["draft", "published", "archived", "removed"],"package_version_status": ["draft", "published", "superseded"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile"],"subscription_status": ["active", "canceled", "expired"],"verification_status": ["pending", "approved", "rejected", "suspended"]
           }
         }
 } as const

@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { ClipboardCheck, Flag, LayoutDashboard, ScrollText, Settings, Users } from "lucide-react";
+import {
+  ClipboardCheck,
+  Flag,
+  LayoutDashboard,
+  Percent,
+  ScrollText,
+  Settings,
+  Users,
+} from "lucide-react";
 import { Topbar } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui";
 import { requireStaffMfa } from "@/server/auth/session";
@@ -22,6 +30,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       label: "Verificações",
       icon: ClipboardCheck,
       show: hasPermission(user.roles, "verifications.read"),
+    },
+    {
+      href: "/super-admin/comissoes",
+      label: "Comissões",
+      icon: Percent,
+      show: hasPermission(user.roles, "finance.read"),
     },
     {
       href: "/super-admin/denuncias",

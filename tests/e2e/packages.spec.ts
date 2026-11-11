@@ -98,6 +98,9 @@ test("visitante vê o pacote na vitrine, sem caminhos de mídia", async ({ page 
   await page.goto("/criador_teste?aba=pacotes");
   const card = page.locator("article", { hasText: TITLE_V2 });
   await expect(card).toContainText("R$ 49,90");
-  await expect(card.getByRole("button", { name: "Compra em breve" })).toBeDisabled();
+  await expect(card.getByRole("link", { name: "Comprar pacote" })).toHaveAttribute(
+    "href",
+    /\/checkout\?tipo=pacote&id=/,
+  );
   expect(await card.innerHTML()).not.toContain("post-media");
 });

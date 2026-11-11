@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { BadgeCheck, Crown, Lock, MessageCircle } from "lucide-react";
 import { Avatar } from "@/components/domain/Avatar";
-import { Badge } from "@/components/ui";
+import { Badge, buttonClasses } from "@/components/ui";
+import { checkoutHref } from "@/features/commerce/constants";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 import { formatBRL, formatDuration, formatMediaCount, VISIBILITY_LABEL } from "./constants";
@@ -74,9 +75,13 @@ export function LockedMedia({ post }: { post: FeedPost }) {
           {formatMediaCount(post.mediaCount - post.videoCount, post.videoCount)} · a mídia só é
           carregada depois do acesso liberado
         </p>
-        <span className="mt-2 inline-flex h-9 items-center rounded-pill border border-border px-4 type-caption font-semibold text-ink-muted">
-          {ppv ? "Compra avulsa em breve" : "Assinaturas em breve"}
-        </span>
+        <Link
+          href={ppv ? checkoutHref("ppv", post.id) : checkoutHref("assinatura", post.creatorId)}
+          className={`${buttonClasses("primary", "md")} mt-2`}
+        >
+          {ppv ? <Lock className="size-4" aria-hidden /> : <Crown className="size-4" aria-hidden />}
+          {ppv ? `Desbloquear por ${formatBRL(post.priceCents)}` : "Assinar para ver"}
+        </Link>
       </div>
     </div>
   );

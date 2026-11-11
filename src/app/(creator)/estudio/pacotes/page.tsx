@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { Alert, Badge, buttonClasses, EmptyState, LinkTabs, PageHeader } from "@/components/ui";
+import { StudioTabs } from "@/features/commerce/StudioTabs";
+import { Alert, Badge, buttonClasses, EmptyState, PageHeader } from "@/components/ui";
 import { Table, Td, THead, Tr } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
 import { requireRole } from "@/server/auth/session";
@@ -70,15 +71,7 @@ export default async function Page({
           </Link>
         }
       />
-      <div className="mb-6">
-        <LinkTabs
-          items={[
-            { href: "/estudio", label: "Publicações" },
-            { href: "/estudio/pacotes", label: "Pacotes" },
-          ]}
-          active="/estudio/pacotes"
-        />
-      </div>
+      <StudioTabs active="/estudio/pacotes" />
       {salvo && (
         <div className="mb-6">
           <Alert tone="success">

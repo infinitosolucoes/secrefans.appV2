@@ -6,6 +6,8 @@ const PROTECTED_PREFIXES = [
   "/inicio",
   "/assinaturas",
   "/biblioteca",
+  "/checkout",
+  "/pedido",
   "/carteira",
   "/mensagens",
   "/notificacoes",
@@ -66,7 +68,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!user && isProtected(path)) {
-    return redirectTo(`/entrar?next=${encodeURIComponent(path)}`);
+    // Mantém a query (ex.: /checkout?tipo=ppv&id=…) para voltar ao mesmo item depois do login.
+    return redirectTo(`/entrar?next=${encodeURIComponent(path + request.nextUrl.search)}`);
   }
 
   if (user && path.startsWith("/super-admin") && path !== "/super-admin/mfa") {

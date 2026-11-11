@@ -1,0 +1,39 @@
+export type OrderKind = "subscription" | "ppv" | "package" | "tip";
+export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "refunded" | "chargeback";
+
+export const CHECKOUT_KINDS = {
+  ppv: "ppv",
+  pacote: "package",
+  assinatura: "subscription",
+  gorjeta: "tip",
+} as const satisfies Record<string, OrderKind>;
+
+export type CheckoutSlug = keyof typeof CHECKOUT_KINDS;
+
+export const checkoutHref = (slug: CheckoutSlug, id: string) => `/checkout?tipo=${slug}&id=${id}`;
+
+export const ORDER_KIND_LABEL: Record<OrderKind, string> = {
+  subscription: "Assinatura",
+  ppv: "PPV",
+  package: "Pacote",
+  tip: "Gorjeta",
+};
+
+export const ORDER_STATUS: Record<
+  OrderStatus,
+  { label: string; tone: "neutral" | "success" | "warning" | "danger" }
+> = {
+  pending: { label: "Aguardando pagamento", tone: "warning" },
+  paid: { label: "Confirmado", tone: "success" },
+  failed: { label: "Recusado", tone: "danger" },
+  cancelled: { label: "Cancelado", tone: "neutral" },
+  refunded: { label: "Estornado", tone: "neutral" },
+  chargeback: { label: "Contestado", tone: "danger" },
+};
+
+export const TIP_OPTIONS = [500, 1000, 2000, 5000];
+export const SUBSCRIPTION_PRICE_MIN = 5;
+export const SUBSCRIPTION_PRICE_MAX = 1000;
+
+export const formatPercent = (bps: number) =>
+  `${(bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
