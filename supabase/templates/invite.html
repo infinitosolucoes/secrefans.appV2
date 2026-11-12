@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Você recebeu um convite</title>
+</head>
+<body style="margin:0;padding:0;background:#0b0508">
+<span style="display:none;max-height:0;overflow:hidden;opacity:0">Aceite o convite para criar sua conta.</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b0508">
+  <tr><td align="center" style="padding:32px 16px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;font-family:Montserrat,Helvetica,Arial,sans-serif">
+      <tr><td align="center" style="padding:0 0 24px">
+        <img src="{{ .SiteURL }}/brand/logo-cadeado-horizontal.png" alt="Secretfans" width="180" style="display:block;width:180px;height:auto;border:0">
+      </td></tr>
+      <tr><td style="background:#170a10;border:1px solid #3a1526;border-radius:20px;padding:32px 28px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="padding:0 0 12px;color:#f5eef1;font-size:22px;line-height:30px;font-weight:700">Você recebeu um convite</td></tr>
+          <tr><td style="padding:0 0 24px;color:#f5eef1;font-size:15px;line-height:24px">Você foi convidado(a) para participar da Secretfans. Aceite o convite para criar sua conta.</td></tr>
+          <tr><td align="center" style="padding:8px 0 24px">
+         <a href="{{ .ConfirmationURL }}" target="_blank"
+            style="display:inline-block;background:#ff0a78;background-image:linear-gradient(135deg,#ff0a78,#c2004f);color:#ffffff;font-weight:700;font-size:16px;text-decoration:none;padding:14px 32px;border-radius:999px">Aceitar convite</a>
+       </td></tr>
+       <tr><td style="padding:0 0 20px;color:#b7a3ac;font-size:13px;line-height:20px">
+         Se o botão não funcionar, copie e cole este link no navegador:<br>
+         <a href="{{ .ConfirmationURL }}" style="color:#ff0a78;word-break:break-all">{{ .ConfirmationURL }}</a>
+       </td></tr>
+          <tr><td style="color:#b7a3ac;font-size:13px;line-height:20px">Se você não esperava este convite, ignore este e-mail.</td></tr>
+        </table>
+      </td></tr>
+      <tr><td align="center" style="padding:24px 8px 0;color:#b7a3ac;font-size:12px;line-height:18px">
+        Secretfans · conteúdo exclusivo para maiores de 18 anos.<br>
+        Este é um e-mail automático; não responda.
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
