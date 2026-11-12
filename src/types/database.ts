@@ -301,6 +301,34 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"notification_prefs": {
+                  Row: {
+                    "email_account": boolean,"email_messages": boolean,"email_sales": boolean,"inapp_new_posts": boolean,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "email_account"?: boolean,"email_messages"?: boolean,"email_sales"?: boolean,"inapp_new_posts"?: boolean,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "email_account"?: boolean,"email_messages"?: boolean,"email_sales"?: boolean,"inapp_new_posts"?: boolean,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"notifications": {
+                  Row: {
+                    "actor_id": string | null,"body": string,"created_at": string,"email_status": string,"emailed_at": string | null,"id": number,"kind": string,"link": string,"read_at": string | null,"title": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"body"?: string,"created_at"?: string,"email_status"?: string,"emailed_at"?: string | null,"id"?: never,"kind": string,"link"?: string,"read_at"?: string | null,"title": string,"user_id": string
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"body"?: string,"created_at"?: string,"email_status"?: string,"emailed_at"?: string | null,"id"?: never,"kind"?: string,"link"?: string,"read_at"?: string | null,"title"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"orders": {
                   Row: {
                     "actual_fee_cents": number | null,"buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at": string,"creator_id": string,"creator_net_cents": number,"description": string,"external_fees_cents": number,"gross_cents": number,"id": string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at": string | null,"provider": string | null,"provider_ref": string | null,"provider_subscription_id": string | null,"renewal_of": string | null,"split_cents": number,"status": Database["public"]['Enums']["order_status"],"target_id": string,"updated_at": string
@@ -829,6 +857,9 @@ isOneToOne: false
 "mark_conversation_read":
 { Args: { "p_conversation_id": string }; Returns: undefined
                            },
+"mark_notifications_read":
+{ Args: { "p_ids"?: (number)[] }; Returns: undefined
+                           },
 "message_media_counts":
 { Args: { "p_conversation_id": string }; Returns: {
               "media_count": number,"message_id": string
@@ -881,6 +912,9 @@ isOneToOne: false
                            },
 "set_account_status":
 { Args: { "p_reason": string,"p_status": Database["public"]['Enums']["account_status"],"p_user_id": string }; Returns: undefined
+                           },
+"set_notification_prefs":
+{ Args: { "p_email_account": boolean,"p_email_messages": boolean,"p_email_sales": boolean,"p_inapp_new_posts": boolean }; Returns: undefined
                            },
 "set_package_status":
 { Args: { "p_package_id": string,"p_status": Database["public"]['Enums']["package_status"] }; Returns: undefined

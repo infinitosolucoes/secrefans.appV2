@@ -21,6 +21,9 @@ const serverSchema = z.object({
   ASAAS_WEBHOOK_TOKEN: z.string().min(32).optional(),
   /** Segredo do cron de conciliação (a Vercel envia como Bearer). */
   CRON_SECRET: z.string().min(16).optional(),
+  /** E-mails de notificação (Resend). Sem a chave, as notificações ficam só no site. */
+  RESEND_API_KEY: z.string().min(10).optional(),
+  EMAIL_FROM: z.string().min(5).default("Secretfans <nao-responda@secretfans.app.br>"),
 });
 
 export function serverEnv() {
@@ -34,5 +37,7 @@ export function serverEnv() {
     ASAAS_ENV: process.env.ASAAS_ENV || undefined,
     ASAAS_WEBHOOK_TOKEN: process.env.ASAAS_WEBHOOK_TOKEN || undefined,
     CRON_SECRET: process.env.CRON_SECRET || undefined,
+    RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
+    EMAIL_FROM: process.env.EMAIL_FROM || undefined,
   });
 }

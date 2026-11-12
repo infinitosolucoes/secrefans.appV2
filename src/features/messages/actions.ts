@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
+import { dispatchPendingEmails } from "@/server/email";
 import { requireRole, requireUser } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { UUID_RE } from "@/features/content/constants";
@@ -65,6 +67,7 @@ export async function sendMessageAction(input: unknown): Promise<ChatResult> {
     p_media: d.media,
   });
   if (error) return { ok: false, message: errors[error.code ?? ""] ?? "Não foi possível enviar." };
+  after(() => dispatchPendingEmails().catch(() => undefined));
   revalidatePath(`/mensagens/${d.conversationId}`);
   revalidatePath("/mensagens");
   return { ok: true };
@@ -99,6 +102,7 @@ export async function sendBroadcastAction(
           ? "Aguarde 10 minutos entre envios em massa."
           : (errors[error.code ?? ""] ?? "Não foi possível enviar."),
     };
+  after(() => dispatchPendingEmails(50).catch(() => undefined));
   revalidatePath("/mensagens", "layout");
   return {
     ok: true,

@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
+import { dispatchPendingEmails } from "@/server/email";
 import { requireRole, requireUser } from "@/server/auth/session";
 import { createServerSupabase, createServiceSupabase } from "@/server/auth/supabase";
 import {
@@ -262,6 +264,7 @@ export async function simulatePaymentAction(fd: FormData): Promise<void> {
     body,
   );
   await applyPaymentEvent(event);
+  after(() => dispatchPendingEmails().catch(() => undefined));
   revalidatePath(`/pedido/${orderId}`);
   revalidatePath("/biblioteca");
 }

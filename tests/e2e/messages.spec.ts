@@ -34,6 +34,7 @@ test.beforeAll(async () => {
   }
   if (convIds.length) await db.from("conversations").delete().in("id", convIds);
   await db.from("message_broadcasts").delete().eq("creator_id", USERS.creator.id);
+  await db.from("notifications").delete().in("user_id", [USERS.creator.id, USERS.fan.id]);
 
   await db
     .from("user_roles")
@@ -118,4 +119,27 @@ test("criador envia mensagem em massa para assinantes", async ({ page }) => {
   await page.getByRole("textbox", { name: "Mensagem" }).fill("Novidade para assinantes!");
   await page.getByRole("button", { name: "Enviar para assinantes" }).click();
   await expect(page.getByText("Enviada para 1 assinante.")).toBeVisible();
+});
+
+test("fã vê a mensagem paga na biblioteca", async ({ page }) => {
+  await login(page, USERS.fan.email);
+  await page.goto("/biblioteca?aba=ppv");
+  await expect(page.getByRole("link", { name: "Ver mensagem" })).toBeVisible();
+});
+
+test("criador recebe notificações e vê a venda no extrato (com CSV)", async ({ page }) => {
+  await login(page, USERS.creator.email);
+  await page.goto("/notificacoes");
+  await expect(page.getByText("Nova venda: R$ 9,90")).toBeVisible();
+  await expect(page.getByText(/te mandou uma mensagem/).first()).toBeVisible();
+  await page.getByRole("button", { name: "Marcar todas como lidas" }).click();
+  await expect(page.getByRole("button", { name: "Marcar todas como lidas" })).toHaveCount(0);
+
+  await page.goto("/estudio/extrato");
+  const row = page.getByRole("row", { name: /Mensagem paga/ });
+  await expect(row).toContainText("R$ 9,90");
+  const csv = await page.request.get("/estudio/extrato/csv");
+  expect(csv.status()).toBe(200);
+  expect(csv.headers()["content-type"]).toContain("text/csv");
+  expect(await csv.text()).toContain("Mensagem paga;");
 });

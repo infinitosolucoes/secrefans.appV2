@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { dispatchPendingEmails } from "@/server/email";
 import { applyPaymentEvent, getAsaasProvider } from "@/server/providers/payments";
 import { AsaasError, IgnoredEvent } from "@/server/providers/payments/asaas";
 
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
   }
   try {
     const result = await applyPaymentEvent(event);
+    after(() => dispatchPendingEmails().catch(() => undefined));
     return NextResponse.json({ ok: true, result });
   } catch (e) {
     // Cobrança avulsa sem pedido na Secretfans (ex.: outra cobrança da mesma conta Asaas):

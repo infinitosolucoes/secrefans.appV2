@@ -8,6 +8,7 @@ import {
   getAsaasProvider,
 } from "@/server/providers/payments";
 import { normalizeAsaasStatus, splitTotalCents } from "@/server/providers/payments/asaas";
+import { dispatchPendingEmails } from "@/server/email";
 
 export const maxDuration = 60;
 
@@ -79,5 +80,7 @@ export async function GET(request: Request) {
       summary.errors++;
     }
   }
-  return NextResponse.json({ ok: true, ...summary });
+  // Fila de e-mails de notificação que ficou para trás (ex.: envio em massa grande).
+  const emails = await dispatchPendingEmails(200).catch(() => ({ sent: 0, failed: 0 }));
+  return NextResponse.json({ ok: true, ...summary, emails });
 }

@@ -24,6 +24,7 @@ import { signOutAction } from "@/features/identity/actions";
 import { switchViewModeAction } from "@/features/identity/view-mode-actions";
 import type { SessionUser } from "@/server/auth/session";
 import { getUnreadTotal } from "@/features/messages/queries";
+import { getUnreadNotifications } from "@/features/notifications/queries";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
@@ -172,10 +173,12 @@ export function Sidebar({
   user,
   active,
   unread = 0,
+  unreadNotifications = 0,
 }: {
   user: SessionUser | null;
   active?: string;
   unread?: number;
+  unreadNotifications?: number;
 }) {
   const items: NavItem[] = [...navFor(user)];
   if (user) items.push({ href: "/conta/perfil", label: "Meu perfil", icon: UserRound });
@@ -204,6 +207,9 @@ export function Sidebar({
                 <Icon className="size-5" aria-hidden />
                 {label}
                 {href === "/mensagens" && <UnreadBadge count={unread} />}
+                {href === "/notificacoes" && (
+                  <UnreadBadge count={unreadNotifications} label="notificações" />
+                )}
               </Link>
             );
           })}
@@ -238,10 +244,12 @@ function BottomNav({
   user,
   active,
   unread = 0,
+  unreadNotifications = 0,
 }: {
   user: SessionUser | null;
   active?: string;
   unread?: number;
+  unreadNotifications?: number;
 }) {
   const showStudio = user && (user.roles.includes("creator") || user.creatorIntent);
   const nav = navFor(user);
@@ -275,6 +283,9 @@ function BottomNav({
               <Icon className="size-5" aria-hidden />
               {label}
               {href === "/mensagens" && <UnreadBadge count={unread} compact />}
+              {href === "/notificacoes" && (
+                <UnreadBadge count={unreadNotifications} compact label="notificações" />
+              )}
             </Link>
           </li>
         ))}
@@ -284,7 +295,15 @@ function BottomNav({
 }
 
 /** Selo de mensagens não lidas no item "Mensagens". */
-function UnreadBadge({ count, compact = false }: { count: number; compact?: boolean }) {
+function UnreadBadge({
+  count,
+  compact = false,
+  label = "mensagens",
+}: {
+  count: number;
+  compact?: boolean;
+  label?: string;
+}) {
   if (count <= 0) return null;
   return (
     <span
@@ -294,7 +313,7 @@ function UnreadBadge({ count, compact = false }: { count: number; compact?: bool
           ? "absolute -top-1 right-1/4 h-4 min-w-4 px-1 text-[10px]"
           : "ml-auto h-5 min-w-5 px-1.5 type-caption",
       )}
-      aria-label={`${count} mensagens não lidas`}
+      aria-label={`${count} ${label} não lidas`}
     >
       {count > 99 ? "99+" : count}
     </span>
@@ -311,23 +330,33 @@ export async function AppShell({
   children: React.ReactNode;
 }) {
   let unread = 0;
+  let unreadNotifications = 0;
   if (user) {
-    try {
-      unread = await getUnreadTotal(user.id);
-    } catch {
-      unread = 0;
-    }
+    [unread, unreadNotifications] = await Promise.all([
+      getUnreadTotal(user.id).catch(() => 0),
+      getUnreadNotifications().catch(() => 0),
+    ]);
   }
   return (
     <>
       <Topbar user={user} active={active} />
       <div className="mx-auto flex max-w-7xl gap-10 px-4 py-6 pb-24 md:pb-10">
-        <Sidebar user={user} active={active} unread={unread} />
+        <Sidebar
+          user={user}
+          active={active}
+          unread={unread}
+          unreadNotifications={unreadNotifications}
+        />
         <main id="conteudo" className="min-w-0 flex-1">
           {children}
         </main>
       </div>
-      <BottomNav user={user} active={active} unread={unread} />
+      <BottomNav
+        user={user}
+        active={active}
+        unread={unread}
+        unreadNotifications={unreadNotifications}
+      />
     </>
   );
 }

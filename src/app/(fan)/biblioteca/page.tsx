@@ -76,6 +76,16 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
   const owned = (kind: OrderKind) =>
     (orders ?? []).filter((o) => o.kind === kind && o.status === "paid" && active.has(o.id));
 
+  // PPV: publicações e mensagens pagas desbloqueadas (mensagem leva de volta à conversa).
+  const ppvItems = [...owned("ppv"), ...owned("message")].sort(
+    (a, b) => +new Date(b.paid_at ?? b.created_at) - +new Date(a.paid_at ?? a.created_at),
+  );
+  const messageIds = owned("message").map((o) => o.target_id);
+  const { data: msgConvs } = messageIds.length
+    ? await supabase.from("messages").select("id, conversation_id").in("id", messageIds)
+    : { data: [] as Array<{ id: string; conversation_id: string }> };
+  const convByMessage = new Map((msgConvs ?? []).map((m) => [m.id, m.conversation_id]));
+
   return (
     <AppShell user={user} active="/biblioteca">
       <PageHeader
@@ -131,29 +141,48 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ a
         ))}
 
       {tab === "ppv" &&
-        (owned("ppv").length === 0 ? (
+        (ppvItems.length === 0 ? (
           <EmptyState
             title="Nenhum PPV desbloqueado"
-            description="Publicações que você desbloquear ficam aqui."
+            description="Publicações e mensagens pagas que você desbloquear ficam aqui."
           />
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
-            {owned("ppv").map((o) => (
-              <li
-                key={o.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-              >
-                <div>
-                  <p className="type-label text-ink">{o.description.replace(/^PPV · /, "")}</p>
-                  <p className="type-caption text-ink-muted">
-                    {creatorName(o.creator_id)} · {formatDate(o.paid_at)}
-                  </p>
-                </div>
-                <Link href={`/p/${o.target_id}`} className={buttonClasses("secondary", "sm")}>
-                  Ver publicação
-                </Link>
-              </li>
-            ))}
+            {ppvItems.map((o) => {
+              const isMessage = o.kind === "message";
+              const conv = isMessage ? convByMessage.get(o.target_id) : null;
+              return (
+                <li
+                  key={o.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div>
+                    <p className="type-label text-ink">
+                      {isMessage && <Badge tone="accent">Mensagem</Badge>}{" "}
+                      {o.description.replace(/^(PPV|Mensagem paga) · ?/, "") ||
+                        "Mensagem exclusiva"}
+                    </p>
+                    <p className="type-caption text-ink-muted">
+                      {creatorName(o.creator_id)} · {formatDate(o.paid_at)}
+                    </p>
+                  </div>
+                  {isMessage ? (
+                    conv && (
+                      <Link
+                        href={`/mensagens/${conv}`}
+                        className={buttonClasses("secondary", "sm")}
+                      >
+                        Ver mensagem
+                      </Link>
+                    )
+                  ) : (
+                    <Link href={`/p/${o.target_id}`} className={buttonClasses("secondary", "sm")}>
+                      Ver publicação
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         ))}
 
