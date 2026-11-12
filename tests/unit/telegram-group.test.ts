@@ -46,8 +46,9 @@ function fakeRepo(over: Partial<TelegramRepo> = {}): TelegramRepo {
     getSettings: vi.fn(),
     consumeLinkCode: vi.fn(),
     userFor: vi.fn(async () => null),
-    getMember: vi.fn(async () => ({ status: "member" as const, warnings: 0 })),
+    getMember: vi.fn(async () => ({ status: "member" as const, warnings: 0, mutedUntil: null })),
     upsertMember: vi.fn(async () => {}),
+    ensureMember: vi.fn(async () => {}),
     markLeft: vi.fn(async () => {}),
     countRecentHash: vi.fn(async () => 0),
     logAction: vi.fn(async () => {}),
@@ -106,7 +107,7 @@ describe("removeUserFromGroup", () => {
   });
 
   it("sem ban e já banido: não chama kick (que desbaniria)", async () => {
-    repo = fakeRepo({ getMember: vi.fn(async () => ({ status: "banned" as const, warnings: 0 })) });
+    repo = fakeRepo({ getMember: vi.fn(async () => ({ status: "banned" as const, warnings: 0, mutedUntil: null })) });
     await removeUserFromGroup(USER, "desvinculou", USER);
     expect(api.kickChatMember).not.toHaveBeenCalled();
     expect(repo.upsertMember).not.toHaveBeenCalled();

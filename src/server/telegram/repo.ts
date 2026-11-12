@@ -26,9 +26,11 @@ export type MemberStatus = "member" | "muted" | "banned" | "left";
 export interface MemberState {
   status: MemberStatus;
   warnings: number;
+  /** Fim do silêncio (ISO); pode estar no passado. */
+  mutedUntil: string | null;
 }
 
-export type MemberPatch = Partial<MemberState> & { mutedUntil?: string | null; lastActionBy?: string | null };
+export type MemberPatch = Partial<MemberState> & { lastActionBy?: string | null };
 
 export type TelegramAction =
   | "telegram.warn"
@@ -68,6 +70,8 @@ export interface TelegramRepo {
   userFor(tgId: number): Promise<LinkedUser | null>;
   getMember(tgId: number): Promise<MemberState | null>;
   upsertMember(tgId: number, patch: MemberPatch): Promise<void>;
+  /** Cria a linha como "member" se ela não existir; nunca altera uma linha existente. */
+  ensureMember(tgId: number): Promise<void>;
   /** Marca "left" de forma condicional: nunca sobrescreve "banned"; cria a linha se não existir. */
   markLeft(tgId: number): Promise<void>;
   /** Conta as mensagens iguais na janela (sem a atual), grava a atual e apaga as com mais de 1h. */
@@ -162,12 +166,12 @@ export function createTelegramRepo(db: Db = createServiceSupabase()): TelegramRe
     async getMember(tgId) {
       const { data, error } = await db
         .from("telegram_members")
-        .select("status, warnings")
+        .select("status, warnings, muted_until")
         .eq("telegram_user_id", tgId)
         .maybeSingle();
       if (error) fail("getMember", error);
       if (!data) return null;
-      return { status: data.status as MemberStatus, warnings: data.warnings };
+      return { status: data.status as MemberStatus, warnings: data.warnings, mutedUntil: data.muted_until };
     },
 
     async upsertMember(tgId, patch) {
@@ -186,6 +190,16 @@ export function createTelegramRepo(db: Db = createServiceSupabase()): TelegramRe
       if (patch.lastActionBy !== undefined) row.last_action_by = patch.lastActionBy;
       const { error } = await db.from("telegram_members").upsert(row, { onConflict: "telegram_user_id" });
       if (error) fail("upsertMember", error);
+    },
+
+    async ensureMember(tgId) {
+      const { error } = await db
+        .from("telegram_members")
+        .upsert(
+          { telegram_user_id: tgId, status: "member", updated_at: new Date().toISOString() },
+          { onConflict: "telegram_user_id", ignoreDuplicates: true },
+        );
+      if (error) fail("ensureMember", error);
     },
 
     async markLeft(tgId) {

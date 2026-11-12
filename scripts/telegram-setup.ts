@@ -72,7 +72,7 @@ async function main() {
     await call("setWebhook", {
       url: `${site}/api/webhooks/telegram`,
       secret_token: secret,
-      allowed_updates: ["message", "chat_join_request", "chat_member"],
+      allowed_updates: ["message", "edited_message", "chat_join_request", "chat_member"],
       drop_pending_updates: true,
     }),
     await call("setMyCommands", { commands: memberCommands, scope: { type: "default" } }),

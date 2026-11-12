@@ -51,6 +51,7 @@ export interface ChatMemberUpdated {
 export interface Update {
   update_id: number;
   message?: Message;
+  edited_message?: Message;
   chat_join_request?: ChatJoinRequest;
   chat_member?: ChatMemberUpdated;
 }

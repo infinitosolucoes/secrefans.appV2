@@ -51,6 +51,7 @@ function fakeRepo() {
     }),
     getMember: vi.fn<TelegramRepo["getMember"]>(async () => null),
     upsertMember: vi.fn(async () => {}),
+    ensureMember: vi.fn(async () => {}),
     markLeft: vi.fn(async () => {}),
     countRecentHash: vi.fn(async () => 0),
     logAction: vi.fn(async () => {}),
@@ -166,7 +167,7 @@ describe("pedido de entrada", () => {
   });
 
   it("membro banido é recusado", async () => {
-    repo.getMember.mockResolvedValueOnce({ status: "banned", warnings: 0 });
+    repo.getMember.mockResolvedValueOnce({ status: "banned", warnings: 0, mutedUntil: null });
     await handleUpdate(ctx, join(FAN));
     expect(api.declineChatJoinRequest).toHaveBeenCalledWith(GROUP, FAN.id);
     expect(api.approveChatJoinRequest).not.toHaveBeenCalled();
@@ -230,6 +231,48 @@ describe("entrada e saída", () => {
   it("restrito fora do grupo que volta como member recebe boas-vindas", async () => {
     await handleUpdate(ctx, member(FAN, "restricted", "member", { oldIsMember: false }));
     expect(api.sendMessage).toHaveBeenCalledWith(GROUP, "Bem-vindo, Ana!");
+  });
+
+  it("silenciado que desvincula e volta: reaplica a restrição até muted_until e mantém muted", async () => {
+    const until = new Date(NOW.getTime() + 5 * 3600 * 1000);
+    repo.getMember.mockResolvedValue({ status: "left", warnings: 0, mutedUntil: until.toISOString() });
+    await handleUpdate(ctx, member(FAN, "left", "member"));
+    expect(api.restrictChatMember).toHaveBeenCalledWith(GROUP, FAN.id, Math.floor(until.getTime() / 1000));
+    expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, { status: "muted" });
+    expect(repo.upsertMember).not.toHaveBeenCalledWith(FAN.id, { status: "member" });
+  });
+
+  it("silêncio já vencido não é reaplicado", async () => {
+    const past = new Date(NOW.getTime() - 3600 * 1000);
+    repo.getMember.mockResolvedValue({ status: "left", warnings: 0, mutedUntil: past.toISOString() });
+    await handleUpdate(ctx, member(FAN, "left", "member"));
+    expect(api.restrictChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, { status: "member" });
+  });
+
+  it("silêncio a menos de 30 s do fim não é reaplicado (o Telegram trataria como permanente)", async () => {
+    const soon = new Date(NOW.getTime() + 10 * 1000);
+    repo.getMember.mockResolvedValue({ status: "left", warnings: 0, mutedUntil: soon.toISOString() });
+    await handleUpdate(ctx, member(FAN, "left", "member"));
+    expect(api.restrictChatMember).not.toHaveBeenCalled();
+  });
+
+  it("entrada já como restrito (is_member=true) vinda de fora conta como entrada", async () => {
+    await handleUpdate(ctx, member(FAN, "left", "restricted", { newIsMember: true }));
+    expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, { status: "member" });
+    expect(repo.markLeft).not.toHaveBeenCalled();
+  });
+
+  it("restrito vindo de kicked também conta como entrada", async () => {
+    await handleUpdate(ctx, member(FAN, "kicked", "restricted", { newIsMember: true }));
+    expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, { status: "member" });
+  });
+
+  it("restrição aplicada a quem já está no grupo não é entrada", async () => {
+    await handleUpdate(ctx, member(FAN, "member", "restricted", { newIsMember: true }));
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+    expect(repo.markLeft).not.toHaveBeenCalled();
+    expect(api.sendMessage).not.toHaveBeenCalled();
   });
 });
 
@@ -308,7 +351,7 @@ describe("comandos de moderação", () => {
   });
 
   it("/desbanir libera e grava left", async () => {
-    repo.getMember.mockResolvedValue({ status: "banned", warnings: 0 });
+    repo.getMember.mockResolvedValue({ status: "banned", warnings: 0, mutedUntil: null });
     await handleUpdate(ctx, groupMsg(ADMIN, "/desbanir", { reply_to_message: replyTo(FAN) }));
     expect(api.unbanChatMember).toHaveBeenCalledWith(GROUP, FAN.id);
     expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, expect.objectContaining({ status: "left" }));
@@ -316,7 +359,7 @@ describe("comandos de moderação", () => {
   });
 
   it("/desbanir em quem não está banido: só apaga o comando", async () => {
-    repo.getMember.mockResolvedValue({ status: "member", warnings: 1 });
+    repo.getMember.mockResolvedValue({ status: "member", warnings: 1, mutedUntil: null });
     await handleUpdate(ctx, groupMsg(ADMIN, "/desbanir", { reply_to_message: replyTo(FAN) }));
     expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 500);
     expect(api.unbanChatMember).not.toHaveBeenCalled();
@@ -332,7 +375,7 @@ describe("comandos de moderação", () => {
   });
 
   it("/advertir soma advertência com o moderador como ator", async () => {
-    repo.getMember.mockResolvedValue({ status: "member", warnings: 0 });
+    repo.getMember.mockResolvedValue({ status: "member", warnings: 0, mutedUntil: null });
     await handleUpdate(ctx, groupMsg(ADMIN, "/advertir chato", { reply_to_message: replyTo(FAN) }));
     expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, expect.objectContaining({ warnings: 1 }));
     expect(repo.logAction).toHaveBeenCalledWith("u-mod", "telegram.warn", FAN.id, "chato", expect.anything());
@@ -345,7 +388,7 @@ describe("antispam", () => {
     groupMsg(from, "veja https://spam.com", { entities: [{ type: "url", offset: 5, length: 15 }] });
 
   it("link proibido de membro comum: apaga e adverte", async () => {
-    repo.getMember.mockResolvedValue({ status: "member", warnings: 0 });
+    repo.getMember.mockResolvedValue({ status: "member", warnings: 0, mutedUntil: null });
     await handleUpdate(ctx, link(FAN));
     expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 500);
     expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, expect.objectContaining({ warnings: 1 }));
@@ -355,7 +398,7 @@ describe("antispam", () => {
   });
 
   it("3ª advertência silencia por auto_mute_hours e zera", async () => {
-    repo.getMember.mockResolvedValue({ status: "member", warnings: 2 });
+    repo.getMember.mockResolvedValue({ status: "member", warnings: 2, mutedUntil: null });
     await handleUpdate(ctx, link(FAN));
     expect(api.restrictChatMember).toHaveBeenCalledWith(GROUP, FAN.id, NOW_UNIX + 24 * 3600);
     expect(repo.upsertMember).toHaveBeenCalledWith(
@@ -379,6 +422,66 @@ describe("antispam", () => {
     await handleUpdate(ctx, groupMsg(FAN, "compre já"));
     expect(repo.countRecentHash).toHaveBeenCalledWith(FAN.id, expect.any(String), 60);
     expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 500);
+  });
+
+  it("autor de mensagem no grupo é registrado como membro se não houver linha (sem boas-vindas)", async () => {
+    await handleUpdate(ctx, groupMsg(OTHER, "bom dia"));
+    expect(repo.ensureMember).toHaveBeenCalledWith(OTHER.id);
+    expect(api.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("edição de mensagem com link proibido: apaga e adverte", async () => {
+    repo.getMember.mockResolvedValue({ status: "member", warnings: 0, mutedUntil: null });
+    const u: Update = {
+      update_id: nextId++,
+      edited_message: {
+        message_id: 501,
+        from: FAN,
+        chat: { id: GROUP, type: "supergroup" },
+        text: "veja https://spam.com",
+        entities: [{ type: "url", offset: 5, length: 15 }],
+      },
+    };
+    await handleUpdate(ctx, u);
+    expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 501);
+    expect(repo.logAction).toHaveBeenCalledWith(null, "telegram.spam_deleted", FAN.id, "spam:link", expect.anything());
+  });
+
+  it("edição não conta para flood (não é mensagem nova)", async () => {
+    repo.countRecentHash.mockResolvedValue(99);
+    const u: Update = {
+      update_id: nextId++,
+      edited_message: { message_id: 501, from: FAN, chat: { id: GROUP, type: "supergroup" }, text: "compre já" },
+    };
+    await handleUpdate(ctx, u);
+    expect(repo.countRecentHash).not.toHaveBeenCalled();
+    expect(api.deleteMessage).not.toHaveBeenCalled();
+  });
+
+  it("comando editado não é executado", async () => {
+    const u: Update = {
+      update_id: nextId++,
+      edited_message: {
+        message_id: 501,
+        from: ADMIN,
+        chat: { id: GROUP, type: "supergroup" },
+        text: "/banir x",
+        reply_to_message: replyTo(FAN),
+      },
+    };
+    await handleUpdate(ctx, u);
+    expect(api.banChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+  });
+
+  it("edição no privado é ignorada", async () => {
+    const u: Update = {
+      update_id: nextId++,
+      edited_message: { message_id: 1, from: FAN, chat: { id: FAN.id, type: "private" }, text: "/start abc" },
+    };
+    await handleUpdate(ctx, u);
+    expect(repo.consumeLinkCode).not.toHaveBeenCalled();
+    expect(api.sendMessage).not.toHaveBeenCalled();
   });
 
   it("mensagem normal não é apagada", async () => {

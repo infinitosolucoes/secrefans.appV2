@@ -75,6 +75,15 @@ export async function handleUpdate(ctx: Ctx, update: Update): Promise<void> {
     return handleGroupMessage(ctx, msg);
   }
 
+  // Edição: só o antispam (um link pode ser colocado editando uma mensagem antiga). Comandos
+  // editados não são executados e o privado é ignorado.
+  if (update.edited_message) {
+    const msg = update.edited_message;
+    if (msg.chat.id !== groupId) return;
+    await flushDueDeletes(ctx);
+    return handleEditedGroupMessage(ctx, msg);
+  }
+
   if (update.chat_join_request) {
     if (update.chat_join_request.chat.id !== groupId) return;
     await flushDueDeletes(ctx);
@@ -154,14 +163,36 @@ function isInside(m: { status: string; is_member?: boolean }): boolean {
   return m.status !== "left" && m.status !== "kicked";
 }
 
+/** O Telegram trata until_date a menos de 30 s como restrição permanente. */
+const MIN_RESTRICT_S = 30;
+
+/**
+ * Registra a entrada. Quem ainda tem silêncio vigente (ex.: desvinculou, o que expulsa e limpa a
+ * restrição no Telegram, e vinculou de novo) volta restrito até muted_until e continua "muted".
+ */
+async function registerEntry(ctx: Ctx, tgId: number): Promise<void> {
+  const member = await ctx.repo.getMember(tgId);
+  const until = member?.mutedUntil ? new Date(member.mutedUntil).getTime() : 0;
+  if (until - nowOf(ctx).getTime() > MIN_RESTRICT_S * 1000) {
+    await ctx.api.restrictChatMember(ctx.config.groupId, tgId, Math.floor(until / 1000));
+    await ctx.repo.upsertMember(tgId, { status: "muted" });
+    return;
+  }
+  await ctx.repo.upsertMember(tgId, { status: "member" });
+}
+
 async function handleChatMember(ctx: Ctx, upd: ChatMemberUpdated): Promise<void> {
   const user = upd.new_chat_member.user;
   if (user.is_bot) return;
   const groupId = ctx.config.groupId;
 
-  // Só a entrada de fato (de fora para dentro): mudanças de cargo ou fim de restrição não repetem as boas-vindas.
-  if (upd.new_chat_member.status === "member" && !isInside(upd.old_chat_member)) {
-    await ctx.repo.upsertMember(user.id, { status: "member" });
+  // Só a entrada de fato (de fora para dentro): mudanças de cargo ou fim de restrição não repetem as
+  // boas-vindas. Entra como "member" ou já como "restricted" com is_member (ex.: adicionado por um
+  // admin com restrição vigente).
+  const next = upd.new_chat_member;
+  const entering = next.status === "member" || (next.status === "restricted" && next.is_member === true);
+  if (entering && !isInside(upd.old_chat_member)) {
+    await registerEntry(ctx, user.id);
     const settings = await ctx.repo.getSettings();
     const welcome = settings.welcomeText.replaceAll("{nome}", user.first_name).trim();
     if (welcome) {
@@ -188,6 +219,10 @@ async function handleGroupMessage(ctx: Ctx, msg: Message): Promise<void> {
   const from = msg.from;
   if (!from || from.is_bot) return;
 
+  // Quem fala no grupo sem linha em telegram_members (membro antigo, adicionado por admin) passa a
+  // existir para a varredura diária. Sem boas-vindas: não é uma entrada.
+  await ctx.repo.ensureMember(from.id);
+
   const cmd = msg.text ? parseCommand(msg.text, ctx.config.botUsername) : null;
   if (isModeration(cmd)) return handleModeration(ctx, msg, from, cmd);
   if (cmd?.kind === "report") return handleReport(ctx, msg, from, cmd);
@@ -195,6 +230,16 @@ async function handleGroupMessage(ctx: Ctx, msg: Message): Promise<void> {
   const admins = await adminIds(ctx);
   if (admins.includes(from.id)) return;
   await checkSpam(ctx, msg, from);
+}
+
+async function handleEditedGroupMessage(ctx: Ctx, msg: Message): Promise<void> {
+  const from = msg.from;
+  if (!from || from.is_bot) return;
+  await ctx.repo.ensureMember(from.id);
+  const admins = await adminIds(ctx);
+  if (admins.includes(from.id)) return;
+  // A edição não é mensagem nova: não conta (nem grava) para flood.
+  await checkSpam(ctx, msg, from, { flood: false });
 }
 
 async function handleModeration(ctx: Ctx, msg: Message, from: User, cmd: ModerationCommand): Promise<void> {
@@ -272,11 +317,16 @@ async function handleReport(
   );
 }
 
-async function checkSpam(ctx: Ctx, msg: Message, from: User): Promise<void> {
+async function checkSpam(ctx: Ctx, msg: Message, from: User, opts = { flood: true }): Promise<void> {
   const settings = await ctx.repo.getSettings();
-  const hash = textHash(msg);
+  const hash = opts.flood ? textHash(msg) : null;
   const recent = hash ? await ctx.repo.countRecentHash(from.id, hash, settings.floodWindowSeconds) : 0;
-  const verdict = detectSpam(msg, settings, recent);
+  // Sem flood, o limite infinito desliga só essa regra no detectSpam.
+  const verdict = detectSpam(
+    msg,
+    opts.flood ? settings : { ...settings, floodRepeatLimit: Number.POSITIVE_INFINITY },
+    recent,
+  );
   if (!verdict.spam) return;
 
   const reason = `spam:${verdict.rule}`;

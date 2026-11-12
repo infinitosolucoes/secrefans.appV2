@@ -5,7 +5,7 @@ O bot modera o grupo VIP da Secretfans: aprova entradas, apaga links proibidos, 
 Pré-requisitos no site:
 
 - Moderadores precisam do papel `moderator` ou `super_admin` no site, ser admins do grupo **e** ter vinculado o Telegram na conta.
-- O cartão "Grupo VIP" em `/conta/perfil` só aparece quando as **quatro** variáveis `TELEGRAM_*` estão definidas.
+- O cartão "Grupo VIP" em `/conta/perfil` só aparece quando as **quatro** variáveis `TELEGRAM_*` estão definidas. Uma variável malformada desliga só o bot (o resto do site segue no ar) e o log mostra `[telegram] variáveis de ambiente inválidas`, com os nomes delas (nunca os valores).
 - As configurações do bot ficam em Super Admin › Configurações (somente `super_admin`).
 - O cron `/api/cron/telegram` roda diariamente (`vercel.json`, 09:30 UTC) e exige `CRON_SECRET` configurado na Vercel.
 
@@ -55,9 +55,16 @@ O ID de supergrupo começa com `-100`.
 npx tsx scripts/telegram-setup.ts
 ```
 
-O script carrega `.env.local`, chama `setWebhook` e `setMyCommands` (escopo padrão e `all_chat_administrators`) e imprime `getWebhookInfo` sem o token. O Telegram exige https: rode com `NEXT_PUBLIC_SITE_URL` apontando para a URL da Vercel, não `localhost`. Sem variáveis, o script sai com código 1 listando as que faltam.
+O script carrega `.env.local`, chama `setWebhook` (com `allowed_updates` = `message`, `edited_message`, `chat_join_request` e `chat_member`; o `chat_member` só chega se for pedido explicitamente) e `setMyCommands` (escopo padrão e `all_chat_administrators`) e imprime `getWebhookInfo` sem o token. O Telegram exige https: rode com `NEXT_PUBLIC_SITE_URL` apontando para a URL da Vercel, não `localhost`. Sem variáveis, o script sai com código 1 listando as que faltam.
 
-## 8. Roteiro de teste (grupo e bot de teste)
+## 8. Membros antigos e outros links de convite
+
+A varredura diária só avalia quem tem linha em `telegram_members`. A linha nasce quando a pessoa entra pelo fluxo do bot, quando entra por qualquer meio enquanto o bot já é admin (update `chat_member`) ou quando ela **fala** no grupo (mensagem ou edição).
+
+- **Membros que já estavam no grupo antes do bot e nunca falam não são detectados** pela varredura. Se o grupo já existia, revise a lista de membros manualmente uma vez e remova quem não tiver conta ativa vinculada.
+- **Revogue todos os outros links de convite** do grupo (Configurações do grupo › Links de convite) e mantenha "Aprovar novos membros" ligado: só o link gerado pelo bot passa pela aprovação com checagem de vínculo.
+
+## 9. Roteiro de teste (grupo e bot de teste)
 
 Use um grupo e um bot **de teste**, nunca os de produção.
 
@@ -68,6 +75,6 @@ Use um grupo e um bot **de teste**, nunca os de produção.
 5. Como membro, responda a uma mensagem com `/denunciar`.
 6. Confira o registro de auditoria e a fila de denúncias no painel.
 
-## 9. Aviso sobre idade
+## 10. Aviso sobre idade
 
 A autodeclaração de +18 **não é verificação real de idade**. Não trate o grupo como conteúdo com idade comprovada.
