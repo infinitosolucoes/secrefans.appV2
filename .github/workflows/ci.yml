@@ -53,6 +53,9 @@ jobs:
             --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
             | grep -E '^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=' | tr -d '"' >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000" >> "$GITHUB_ENV"
+          # O build de CI roda como produção; o E2E de compra usa o provedor simulado.
+          echo "ALLOW_SIMULATED_PAYMENTS=true" >> "$GITHUB_ENV"
+          echo "SIMULATED_WEBHOOK_SECRET=ci-simulated-webhook-secret-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
