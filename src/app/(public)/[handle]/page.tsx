@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, Crown, ExternalLink, Gift, Pencil } from "lucide-react";
+import { BadgeCheck, Crown, ExternalLink, Gift, MessageCircle, Pencil } from "lucide-react";
+import { startConversationAction } from "@/features/messages/actions";
 import { formatDate } from "@/lib/format";
 import { checkoutHref } from "@/features/commerce/constants";
 import { getOwnedPackageVersions, getViewerSubscription } from "@/features/commerce/queries";
@@ -166,6 +167,23 @@ export default async function PublicProfile({
                   loggedIn={Boolean(user)}
                   size="md"
                 />
+                {user ? (
+                  <form action={startConversationAction}>
+                    <input type="hidden" name="otherId" value={profile.id} />
+                    <button type="submit" className={buttonClasses("secondary", "md")}>
+                      <MessageCircle className="size-4" aria-hidden />
+                      Mensagem
+                    </button>
+                  </form>
+                ) : (
+                  <Link
+                    href={`/entrar?next=${encodeURIComponent(`/${profile.handle}`)}`}
+                    className={buttonClasses("secondary", "md")}
+                  >
+                    <MessageCircle className="size-4" aria-hidden />
+                    Mensagem
+                  </Link>
+                )}
                 <Link
                   href={checkoutHref("mimo", profile.id)}
                   className={buttonClasses("primary", "md")}

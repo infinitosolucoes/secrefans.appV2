@@ -65,6 +65,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"conversations": {
+                  Row: {
+                    "created_at": string,"creator_id": string,"creator_unread": number,"fan_id": string,"fan_unread": number,"id": string,"last_message_at": string | null,"last_message_preview": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"creator_id": string,"creator_unread"?: number,"fan_id": string,"fan_unread"?: number,"id"?: string,"last_message_at"?: string | null,"last_message_preview"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"creator_id"?: string,"creator_unread"?: number,"fan_id"?: string,"fan_unread"?: number,"id"?: string,"last_message_at"?: string | null,"last_message_preview"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"creator_commission_acceptances": {
                   Row: {
                     "accepted_at": string,"creator_id": string,"rule_id": string
@@ -224,6 +238,66 @@ isOneToOne: false
       columns: ["entry_id"]
 isOneToOne: false
       referencedRelation: "ledger_entries"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"message_broadcasts": {
+                  Row: {
+                    "body": string,"created_at": string,"creator_id": string,"id": string,"price_cents": number | null,"recipients": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string,"created_at"?: string,"creator_id": string,"id": string,"price_cents"?: number | null,"recipients"?: number
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"creator_id"?: string,"id"?: string,"price_cents"?: number | null,"recipients"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"message_media": {
+                  Row: {
+                    "creator_id": string,"duration_seconds": number | null,"height": number | null,"id": string,"kind": string,"message_id": string,"position": number,"poster_path": string | null,"storage_path": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "creator_id": string,"duration_seconds"?: number | null,"height"?: number | null,"id"?: string,"kind": string,"message_id": string,"position"?: number,"poster_path"?: string | null,"storage_path": string,"width"?: number | null
+                  }
+                  Update: {
+                    "creator_id"?: string,"duration_seconds"?: number | null,"height"?: number | null,"id"?: string,"kind"?: string,"message_id"?: string,"position"?: number,"poster_path"?: string | null,"storage_path"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "message_media_message_id_fkey"
+      columns: ["message_id"]
+isOneToOne: false
+      referencedRelation: "messages"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"messages": {
+                  Row: {
+                    "body": string,"broadcast_id": string | null,"conversation_id": string,"created_at": string,"deleted_at": string | null,"id": string,"price_cents": number | null,"sender_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string,"broadcast_id"?: string | null,"conversation_id": string,"created_at"?: string,"deleted_at"?: string | null,"id": string,"price_cents"?: number | null,"sender_id": string
+                  }
+                  Update: {
+                    "body"?: string,"broadcast_id"?: string | null,"conversation_id"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"price_cents"?: number | null,"sender_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "messages_broadcast_id_fkey"
+      columns: ["broadcast_id"]
+isOneToOne: false
+      referencedRelation: "message_broadcasts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversations"
       referencedColumns: ["id"]
     }
                   ]
@@ -501,14 +575,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"creator_type": string | null,"display_name": string,"handle": string,"id": string,"links": (string)[],"socials": NonNullable<Json>,"status": Database["public"]['Enums']["account_status"],"subscription_price_cents": number | null,"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path": string | null,"banner_path": string | null,"bio": string,"categories": (string)[],"created_at": string,"creator_intent": boolean,"creator_type": string | null,"display_name": string,"dm_policy": string,"handle": string,"id": string,"links": (string)[],"socials": NonNullable<Json>,"status": Database["public"]['Enums']["account_status"],"subscription_price_cents": number | null,"updated_at": string,"visibility": Database["public"]['Enums']["profile_visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle": string,"id": string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"subscription_price_cents"?: number | null,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"dm_policy"?: string,"handle": string,"id": string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"subscription_price_cents"?: number | null,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Update: {
-                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"subscription_price_cents"?: number | null,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
+                    "avatar_path"?: string | null,"banner_path"?: string | null,"bio"?: string,"categories"?: (string)[],"created_at"?: string,"creator_intent"?: boolean,"creator_type"?: string | null,"display_name"?: string,"dm_policy"?: string,"handle"?: string,"id"?: string,"links"?: (string)[],"socials"?: NonNullable<Json>,"status"?: Database["public"]['Enums']["account_status"],"subscription_price_cents"?: number | null,"updated_at"?: string,"visibility"?: Database["public"]['Enums']["profile_visibility"]
                   }
                   Relationships: [
                     
@@ -716,6 +790,9 @@ isOneToOne: false
 "decide_report":
 { Args: { "p_reason": string,"p_remove_target"?: boolean,"p_report_id": string,"p_status": Database["public"]['Enums']["report_status"] }; Returns: undefined
                            },
+"delete_message":
+{ Args: { "p_message_id": string }; Returns: undefined
+                           },
 "delete_package_draft":
 { Args: { "p_package_id": string }; Returns: string[]
                            },
@@ -748,6 +825,19 @@ isOneToOne: false
                            },
 "log_verification_document_access":
 { Args: { "p_path": string,"p_verification_id": string }; Returns: undefined
+                           },
+"mark_conversation_read":
+{ Args: { "p_conversation_id": string }; Returns: undefined
+                           },
+"message_media_counts":
+{ Args: { "p_conversation_id": string }; Returns: {
+              "media_count": number,"message_id": string
+            }[]
+                           },
+"message_media_for":
+{ Args: { "p_message_id": string }; Returns: {
+              "duration_seconds": number,"height": number,"kind": string,"position": number,"poster_path": string,"storage_path": string,"width": number
+            }[]
                            },
 "my_roles":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["app_role"][]
@@ -783,6 +873,12 @@ isOneToOne: false
 "save_package":
 { Args: { "p_audience": Database["public"]['Enums']["package_audience"],"p_category": string,"p_cover_path": string,"p_description": string,"p_items": Json,"p_package_id": string,"p_price_cents": number,"p_publish": boolean,"p_title": string }; Returns: number
                            },
+"send_broadcast":
+{ Args: { "p_body": string,"p_broadcast_id": string,"p_media"?: Json,"p_price_cents"?: number }; Returns: number
+                           },
+"send_message":
+{ Args: { "p_body": string,"p_conversation_id": string,"p_media"?: Json,"p_message_id": string,"p_price_cents"?: number }; Returns: string
+                           },
 "set_account_status":
 { Args: { "p_reason": string,"p_status": Database["public"]['Enums']["account_status"],"p_user_id": string }; Returns: undefined
                            },
@@ -795,12 +891,15 @@ isOneToOne: false
 "staff_can":
 { Args: { "permission": string }; Returns: boolean
                            },
+"start_conversation":
+{ Args: { "p_other_id": string }; Returns: string
+                           },
 "submit_creator_verification":
 { Args: { "p_birth_date": string,"p_depicted_consent": boolean,"p_document_back_path": string,"p_document_front_path": string,"p_legal_name": string,"p_rights_consent": boolean,"p_selfie_path": string }; Returns: string
                            }
           }
           Enums: {
-            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","commission_rule_status": "pending_approval"|"approved"|"rejected","order_kind": "subscription"|"ppv"|"package"|"tip","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded"|"chargeback","package_audience": "all"|"subscribers","package_status": "draft"|"published"|"archived"|"removed","package_version_status": "draft"|"published"|"superseded","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile","subscription_status": "active"|"canceled"|"expired","verification_status": "pending"|"approved"|"rejected"|"suspended"
+            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","commission_rule_status": "pending_approval"|"approved"|"rejected","order_kind": "subscription"|"ppv"|"package"|"tip"|"message","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded"|"chargeback","package_audience": "all"|"subscribers","package_status": "draft"|"published"|"archived"|"removed","package_version_status": "draft"|"published"|"superseded","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile"|"message","subscription_status": "active"|"canceled"|"expired","verification_status": "pending"|"approved"|"rejected"|"suspended"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -920,7 +1019,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"commission_rule_status": ["pending_approval", "approved", "rejected"],"order_kind": ["subscription", "ppv", "package", "tip"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded", "chargeback"],"package_audience": ["all", "subscribers"],"package_status": ["draft", "published", "archived", "removed"],"package_version_status": ["draft", "published", "superseded"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile"],"subscription_status": ["active", "canceled", "expired"],"verification_status": ["pending", "approved", "rejected", "suspended"]
+            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"commission_rule_status": ["pending_approval", "approved", "rejected"],"order_kind": ["subscription", "ppv", "package", "tip", "message"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded", "chargeback"],"package_audience": ["all", "subscribers"],"package_status": ["draft", "published", "archived", "removed"],"package_version_status": ["draft", "published", "superseded"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile", "message"],"subscription_status": ["active", "canceled", "expired"],"verification_status": ["pending", "approved", "rejected", "suspended"]
           }
         }
 } as const

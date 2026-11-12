@@ -151,6 +151,39 @@ export async function getCheckoutItem(
             : undefined,
     };
   }
+  if (slug === "mensagem") {
+    // RLS: só participantes da conversa leem a mensagem.
+    const { data: msg } = await supabase
+      .from("messages")
+      .select("id, body, price_cents, sender_id, deleted_at, conversations(creator_id, fan_id)")
+      .eq("id", id)
+      .maybeSingle();
+    const conv = msg?.conversations as { creator_id: string; fan_id: string } | null | undefined;
+    if (!msg || !conv || msg.price_cents == null || msg.deleted_at) return null;
+    const c = await creator(conv.creator_id);
+    const { count } = await supabase
+      .from("entitlements")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "message")
+      .eq("target_id", id)
+      .is("revoked_at", null);
+    const name = c?.display_name || c?.handle || "";
+    return {
+      kind: "message",
+      targetId: id,
+      title: msg.body ? msg.body.slice(0, 80) : `Mensagem exclusiva de ${name}`,
+      detail: "Mensagem paga no chat · desbloqueio avulso",
+      priceCents: msg.price_cents,
+      creatorHandle: c?.handle ?? "",
+      creatorName: name,
+      blocked:
+        conv.fan_id !== viewerId
+          ? "Esta mensagem não é para você."
+          : count
+            ? "Você já desbloqueou esta mensagem."
+            : undefined,
+    };
+  }
   if (slug === "pacote") {
     const { data: pkg } = await supabase
       .from("public_packages")

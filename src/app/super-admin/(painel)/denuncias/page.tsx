@@ -17,7 +17,12 @@ export const metadata: Metadata = { title: "Denúncias · Admin" };
 
 const STATUSES = ["open", "resolved", "dismissed"] as const;
 const LABELS = { open: "Abertas", resolved: "Procedentes", dismissed: "Arquivadas" } as const;
-const TARGET_LABEL = { post: "Publicação", comment: "Comentário", profile: "Perfil" } as const;
+const TARGET_LABEL = {
+  post: "Publicação",
+  comment: "Comentário",
+  profile: "Perfil",
+  message: "Mensagem",
+} as const;
 const URGENT = new Set(["nao_consensual", "menor_de_idade", "violencia"]);
 
 export default async function Page({

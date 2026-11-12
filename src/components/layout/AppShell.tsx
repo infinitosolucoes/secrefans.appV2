@@ -23,6 +23,7 @@ import { Logo } from "./Logo";
 import { signOutAction } from "@/features/identity/actions";
 import { switchViewModeAction } from "@/features/identity/view-mode-actions";
 import type { SessionUser } from "@/server/auth/session";
+import { getUnreadTotal } from "@/features/messages/queries";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
@@ -167,7 +168,15 @@ export function Topbar({ user, active }: { user: SessionUser | null; active?: st
 }
 
 /** Sidebar 240px do DS. Ativo em surface-alt + radius-md. Visitante vê "Criar Conta" e o card "Seja um Criador". */
-export function Sidebar({ user, active }: { user: SessionUser | null; active?: string }) {
+export function Sidebar({
+  user,
+  active,
+  unread = 0,
+}: {
+  user: SessionUser | null;
+  active?: string;
+  unread?: number;
+}) {
   const items: NavItem[] = [...navFor(user)];
   if (user) items.push({ href: "/conta/perfil", label: "Meu perfil", icon: UserRound });
   if (user && (user.roles.includes("creator") || user.creatorIntent)) {
@@ -194,6 +203,7 @@ export function Sidebar({ user, active }: { user: SessionUser | null; active?: s
               >
                 <Icon className="size-5" aria-hidden />
                 {label}
+                {href === "/mensagens" && <UnreadBadge count={unread} />}
               </Link>
             );
           })}
@@ -224,7 +234,15 @@ export function Sidebar({ user, active }: { user: SessionUser | null; active?: s
 }
 
 /** Navegação inferior no mobile. Criadores veem o Estúdio no lugar de Notificações. */
-function BottomNav({ user, active }: { user: SessionUser | null; active?: string }) {
+function BottomNav({
+  user,
+  active,
+  unread = 0,
+}: {
+  user: SessionUser | null;
+  active?: string;
+  unread?: number;
+}) {
   const showStudio = user && (user.roles.includes("creator") || user.creatorIntent);
   const nav = navFor(user);
   const items: NavItem[] = [
@@ -250,12 +268,13 @@ function BottomNav({ user, active }: { user: SessionUser | null; active?: string
               href={href}
               aria-current={active === href ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-1 py-2 type-caption",
+                "relative flex flex-col items-center gap-1 py-2 type-caption",
                 active === href ? "text-accent-text" : "text-ink-muted",
               )}
             >
               <Icon className="size-5" aria-hidden />
               {label}
+              {href === "/mensagens" && <UnreadBadge count={unread} compact />}
             </Link>
           </li>
         ))}
@@ -264,7 +283,25 @@ function BottomNav({ user, active }: { user: SessionUser | null; active?: string
   );
 }
 
-export function AppShell({
+/** Selo de mensagens não lidas no item "Mensagens". */
+function UnreadBadge({ count, compact = false }: { count: number; compact?: boolean }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center rounded-pill bg-accent font-bold text-white",
+        compact
+          ? "absolute -top-1 right-1/4 h-4 min-w-4 px-1 text-[10px]"
+          : "ml-auto h-5 min-w-5 px-1.5 type-caption",
+      )}
+      aria-label={`${count} mensagens não lidas`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+export async function AppShell({
   user,
   active,
   children,
@@ -273,16 +310,24 @@ export function AppShell({
   active?: string;
   children: React.ReactNode;
 }) {
+  let unread = 0;
+  if (user) {
+    try {
+      unread = await getUnreadTotal(user.id);
+    } catch {
+      unread = 0;
+    }
+  }
   return (
     <>
       <Topbar user={user} active={active} />
       <div className="mx-auto flex max-w-7xl gap-10 px-4 py-6 pb-24 md:pb-10">
-        <Sidebar user={user} active={active} />
+        <Sidebar user={user} active={active} unread={unread} />
         <main id="conteudo" className="min-w-0 flex-1">
           {children}
         </main>
       </div>
-      <BottomNav user={user} active={active} />
+      <BottomNav user={user} active={active} unread={unread} />
     </>
   );
 }

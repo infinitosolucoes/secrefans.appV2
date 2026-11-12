@@ -1,4 +1,4 @@
-export type OrderKind = "subscription" | "ppv" | "package" | "tip";
+export type OrderKind = "subscription" | "ppv" | "package" | "tip" | "message";
 export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "refunded" | "chargeback";
 
 export const CHECKOUT_KINDS = {
@@ -6,6 +6,7 @@ export const CHECKOUT_KINDS = {
   pacote: "package",
   assinatura: "subscription",
   mimo: "tip",
+  mensagem: "message",
   /** Nome antigo do mimo: mantido para links já compartilhados. */
   gorjeta: "tip",
 } as const satisfies Record<string, OrderKind>;
@@ -19,6 +20,7 @@ export const ORDER_KIND_LABEL: Record<OrderKind, string> = {
   ppv: "PPV",
   package: "Pacote",
   tip: "Mimo",
+  message: "Mensagem paga",
 };
 
 export const ORDER_STATUS: Record<

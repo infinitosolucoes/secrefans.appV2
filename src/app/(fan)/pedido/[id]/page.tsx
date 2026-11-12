@@ -36,8 +36,18 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     .eq("id", order.creator_id)
     .maybeSingle();
   const status = order.status as OrderStatus;
-  const destination =
-    order.kind === "ppv"
+  let messageConversation: string | null = null;
+  if (order.kind === "message") {
+    const { data: msg } = await supabase
+      .from("messages")
+      .select("conversation_id")
+      .eq("id", order.target_id)
+      .maybeSingle();
+    messageConversation = msg?.conversation_id ?? null;
+  }
+  const destination = messageConversation
+    ? `/mensagens/${messageConversation}`
+    : order.kind === "ppv"
       ? `/p/${order.target_id}`
       : order.kind === "package"
         ? `/biblioteca/pacote/${order.target_id}`
@@ -159,11 +169,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {status === "paid" && (
             <div className="flex flex-wrap gap-2">
               <Link href={destination} className={buttonClasses("primary", "md")}>
-                {order.kind === "ppv"
-                  ? "Ver publicação"
-                  : order.kind === "package"
-                    ? "Abrir pacote"
-                    : "Ir para o perfil"}
+                {order.kind === "message"
+                  ? "Ver mensagem"
+                  : order.kind === "ppv"
+                    ? "Ver publicação"
+                    : order.kind === "package"
+                      ? "Abrir pacote"
+                      : "Ir para o perfil"}
               </Link>
               <Link href="/biblioteca" className={buttonClasses("secondary", "md")}>
                 Minha biblioteca
