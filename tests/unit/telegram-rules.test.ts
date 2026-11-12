@@ -23,6 +23,10 @@ describe("parseCommand", () => {
   it("mute com duração válida e inválida", () => {
     expect(parseCommand("/silenciar 7d flood", BOT)).toEqual({ kind: "mute", hours: 168, reason: "flood" });
     expect(parseCommand("/silenciar 2h", BOT)).toBeNull();
+    // Chaves herdadas do protótipo não são durações.
+    for (const k of ["constructor", "toString", "__proto__", "hasOwnProperty", "valueOf"]) {
+      expect(parseCommand(`/silenciar ${k} x`, BOT)).toBeNull();
+    }
   });
 
   it("advertir sem motivo", () => {

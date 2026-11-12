@@ -113,7 +113,7 @@ export async function muteTelegramUser(
   await applyMute(requireCtx(), tgId, hours, actor, reason);
 }
 
-/** Mesmo caminho do /ban do bot: status banned + ban + auditoria telegram.ban. */
+/** Mesmo caminho do /ban do bot: ban na Bot API + status banned + auditoria telegram.ban. */
 export async function banTelegramUser(tgId: number, actor: string, reason: string): Promise<void> {
   await applyBan(requireCtx(), tgId, actor, reason);
 }

@@ -73,10 +73,11 @@ export async function applyMute(
 }
 
 export async function applyBan(ctx: Ctx, tgId: number, actor: string | null, reason: string): Promise<void> {
-  // Grava "banned" antes da Bot API: o update de saída gerado pelo ban (outra chamada do webhook)
-  // usa markLeft, que não sobrescreve "banned".
-  await ctx.repo.upsertMember(tgId, { status: "banned", lastActionBy: actor });
+  // Bot API primeiro: se ela falhar, o banco não fica dizendo "banned" com a pessoa no grupo.
+  // Sem corrida com o update de saída gerado pelo ban (outra chamada do webhook): ele usa markLeft,
+  // que nunca sobrescreve "banned", e se chegar antes deste upsert, o upsert vence de qualquer jeito.
   await ctx.api.banChatMember(ctx.config.groupId, tgId);
+  await ctx.repo.upsertMember(tgId, { status: "banned", lastActionBy: actor });
   await ctx.repo.logAction(actor, "telegram.ban", tgId, reason, await targetMeta(ctx, tgId));
 }
 

@@ -17,7 +17,12 @@ export type Command =
   | { kind: "unban" }
   | { kind: "report"; reason: ReportReason; details: string };
 
-const DURATIONS: Record<string, 1 | 24 | 168> = { "1h": 1, "24h": 24, "7d": 168 };
+// Map (e não objeto literal): "constructor", "__proto__" etc. não podem virar duração.
+const DURATIONS = new Map<string, 1 | 24 | 168>([
+  ["1h", 1],
+  ["24h", 24],
+  ["7d", 168],
+]);
 
 // Remove acentos e baixa a caixa para casar apelidos.
 function normalize(s: string): string {
@@ -67,7 +72,7 @@ export function parseCommand(text: string, botUsername: string): Command | null 
       return { kind: "unban" };
     case "silenciar": {
       const [dur = "", ...reason] = args.split(/\s+/);
-      const hours = DURATIONS[dur.toLowerCase()];
+      const hours = DURATIONS.get(dur.toLowerCase());
       if (!hours) return null;
       return { kind: "mute", hours, reason: reason.join(" ").trim() };
     }

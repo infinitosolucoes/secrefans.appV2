@@ -242,10 +242,20 @@ describe("comandos de moderação", () => {
     expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 500);
     expect(api.sendMessage.mock.calls[0]?.[0]).toBe(GROUP);
     expect(repo.scheduleDelete).toHaveBeenCalledWith(GROUP, 900, 30);
-    // "banned" é gravado antes do ban na Bot API (evita corrida com o update de saída).
-    expect(repo.upsertMember.mock.invocationCallOrder[0]).toBeLessThan(
-      api.banChatMember.mock.invocationCallOrder[0] ?? 0,
+    // A Bot API vem antes de gravar "banned": se ela falhar, o banco não diz banido com a pessoa no grupo.
+    expect(api.banChatMember.mock.invocationCallOrder[0]).toBeLessThan(
+      repo.upsertMember.mock.invocationCallOrder[0] ?? 0,
     );
+  });
+
+  it("/banir com falha na Bot API não grava banned nem audita", async () => {
+    const { TelegramApiError } = await import("@/server/telegram/client");
+    api.banChatMember.mockRejectedValueOnce(new TelegramApiError("banChatMember", 400, "x"));
+    await expect(
+      handleUpdate(ctx, groupMsg(ADMIN, "/banir x", { reply_to_message: replyTo(FAN) })),
+    ).rejects.toThrow();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+    expect(repo.logAction).not.toHaveBeenCalled();
   });
 
   it("apaga as mensagens vencidas antes de processar", async () => {

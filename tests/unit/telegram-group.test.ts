@@ -249,6 +249,7 @@ describe("ações do Super Admin no Telegram", () => {
   it("banTelegramUser: erro da API propaga sem auditar", async () => {
     (api.banChatMember as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
     await expect(banTelegramUser(555, ADMIN, "x")).rejects.toThrow("api");
+    expect(repo.upsertMember).not.toHaveBeenCalled();
     expect(repo.logAction).not.toHaveBeenCalled();
   });
 });
