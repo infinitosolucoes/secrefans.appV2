@@ -64,7 +64,37 @@ A varredura diária só avalia quem tem linha em `telegram_members`. A linha nas
 - **Membros que já estavam no grupo antes do bot e nunca falam não são detectados** pela varredura. Se o grupo já existia, revise a lista de membros manualmente uma vez e remova quem não tiver conta ativa vinculada.
 - **Revogue todos os outros links de convite** do grupo (Configurações do grupo › Links de convite) e mantenha "Aprovar novos membros" ligado: só o link gerado pelo bot passa pela aprovação com checagem de vínculo.
 
-## 9. Roteiro de teste (grupo e bot de teste)
+## 9. Desbanir depois de reativar uma conta
+
+Bloquear uma conta no Super Admin bane o Telegram vinculado e grava `telegram.ban` com `metadata.cause = "account_blocked"`. Ao reativar a conta, o site desfaz esse ban **sozinho**, mas só se o ban mais recente da pessoa for o do bloqueio. Ban de moderação (`/banir` ou decisão de denúncia) continua valendo. Se a Bot API falhar, a reativação vale mesmo assim e a mensagem termina com "(não foi possível liberar o acesso ao grupo do Telegram)".
+
+Para desbanir à mão (falha da Bot API, ban de moderação que deve ser revisto etc.):
+
+1. Ache o ID do Telegram e o estado no grupo (SQL Editor do Supabase, como `postgres`):
+
+   ```sql
+   select l.telegram_user_id, m.status, m.muted_until
+   from public.telegram_links l
+   left join public.telegram_members m using (telegram_user_id)
+   where l.user_id = '<uuid da conta>';
+   ```
+
+2. No Telegram, desbana a pessoa: um moderador responde a uma mensagem dela no grupo com `/desbanir` (isso já atualiza o banco e a auditoria; pare aqui). Sem mensagem para responder, use Configurações do grupo › Membros removidos › remover a pessoa da lista.
+3. Se usou o app do Telegram no passo 2, atualize o banco e registre a auditoria:
+
+   ```sql
+   update public.telegram_members
+   set status = 'left', updated_at = now()
+   where telegram_user_id = <telegram_user_id> and status = 'banned';
+
+   select public.telegram_log_action(
+     null, 'telegram.unban', '<telegram_user_id>', 'desbanimento manual: <motivo>', '{"cause":"manual"}'
+   );
+   ```
+
+A pessoa não é readicionada: ela volta a pedir entrada pelo link do bot. Um silêncio ainda vigente (`muted_until` no futuro) é reaplicado quando ela entrar.
+
+## 10. Roteiro de teste (grupo e bot de teste)
 
 Use um grupo e um bot **de teste**, nunca os de produção.
 
@@ -75,6 +105,6 @@ Use um grupo e um bot **de teste**, nunca os de produção.
 5. Como membro, responda a uma mensagem com `/denunciar`.
 6. Confira o registro de auditoria e a fila de denúncias no painel.
 
-## 10. Aviso sobre idade
+## 11. Aviso sobre idade
 
 A autodeclaração de +18 **não é verificação real de idade**. Não trate o grupo como conteúdo com idade comprovada.

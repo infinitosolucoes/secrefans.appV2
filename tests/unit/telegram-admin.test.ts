@@ -14,6 +14,8 @@ const muteTelegramUser = vi.fn(async () => {
 const banTelegramUser = vi.fn(async () => {
   calls.push("ban");
 });
+const removeUserFromGroup = vi.fn(async () => {});
+const restoreUserAfterReactivation = vi.fn(async () => {});
 const rpc = vi.fn(async () => {
   calls.push("rpc");
   return { error: null };
@@ -44,10 +46,14 @@ vi.mock("@/server/telegram/group", () => ({
   deleteGroupMessage: (...a: unknown[]) => deleteGroupMessage(...(a as [])),
   muteTelegramUser: (...a: unknown[]) => muteTelegramUser(...(a as [])),
   banTelegramUser: (...a: unknown[]) => banTelegramUser(...(a as [])),
+  removeUserFromGroup: (...a: unknown[]) => removeUserFromGroup(...(a as [])),
+  restoreUserAfterReactivation: (...a: unknown[]) => restoreUserAfterReactivation(...(a as [])),
+  BAN_CAUSE_ACCOUNT_BLOCKED: "account_blocked",
 }));
 
 import { telegramSettingsSchema } from "@/features/super-admin/telegram-settings";
 import { decideReportAction } from "@/features/super-admin/reports";
+import { setAccountStatusAction } from "@/features/super-admin/actions";
 
 const validSettings = {
   rulesText: "Seja gentil.",
@@ -182,5 +188,46 @@ describe("decideReportAction com ação no Telegram", () => {
     const r = await decideReportAction(null, form({ telegramAction: "kick" }));
     expect(r.ok).toBe(false);
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("setAccountStatusAction e o grupo do Telegram", () => {
+  const USER = "11111111-1111-4111-8111-111111111111";
+  const statusForm = (status: string) => {
+    const fd = new FormData();
+    fd.set("userId", USER);
+    fd.set("status", status);
+    fd.set("reason", "motivo do admin");
+    return fd;
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("bloqueio bane com a causa account_blocked", async () => {
+    const r = await setAccountStatusAction(null, statusForm("blocked"));
+    expect(r).toEqual({ ok: true, message: "Conta bloqueada." });
+    expect(removeUserFromGroup).toHaveBeenCalledWith(USER, "motivo do admin", ADMIN, {
+      ban: true,
+      cause: "account_blocked",
+    });
+    expect(restoreUserAfterReactivation).not.toHaveBeenCalled();
+  });
+
+  it("reativação tenta liberar o grupo", async () => {
+    const r = await setAccountStatusAction(null, statusForm("active"));
+    expect(r).toEqual({ ok: true, message: "Conta reativada." });
+    expect(restoreUserAfterReactivation).toHaveBeenCalledWith(USER, ADMIN);
+    expect(removeUserFromGroup).not.toHaveBeenCalled();
+  });
+
+  it("falha no Telegram não desfaz a reativação", async () => {
+    restoreUserAfterReactivation.mockRejectedValueOnce(new Error("api"));
+    const r = await setAccountStatusAction(null, statusForm("active"));
+    expect(r).toEqual({
+      ok: true,
+      message: "Conta reativada. (não foi possível liberar o acesso ao grupo do Telegram)",
+    });
   });
 });

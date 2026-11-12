@@ -14,6 +14,10 @@ export interface GroupDeps {
 
 const SWEEP_REASON = "conta inativa no site";
 
+/** Causa gravada no metadata do telegram.ban quando o ban vem do bloqueio da conta no site. */
+export const BAN_CAUSE_ACCOUNT_BLOCKED = "account_blocked";
+const REACTIVATION_REASON = "conta reativada";
+
 function defaultDeps(): GroupDeps | null {
   const config = telegramConfig();
   if (!config) return null;
@@ -29,7 +33,7 @@ export async function removeUserFromGroup(
   userId: string,
   reason: string,
   actor: string | null,
-  opts?: { ban?: boolean },
+  opts?: { ban?: boolean; cause?: string },
 ): Promise<void> {
   const deps = defaultDeps();
   if (!deps) return;
@@ -41,7 +45,7 @@ export async function removeUserFromGroup(
   if (opts?.ban) {
     await api.banChatMember(groupId, tgId);
     await repo.upsertMember(tgId, { status: "banned", lastActionBy: actor });
-    await repo.logAction(actor, "telegram.ban", tgId, reason);
+    await repo.logAction(actor, "telegram.ban", tgId, reason, opts.cause ? { cause: opts.cause } : undefined);
     return;
   }
 
@@ -51,6 +55,29 @@ export async function removeUserFromGroup(
   await api.kickChatMember(groupId, tgId);
   await repo.upsertMember(tgId, { status: "left", lastActionBy: actor });
   await repo.logAction(actor, "telegram.kick", tgId, reason);
+}
+
+/**
+ * Conta reativada no site: desfaz o ban do grupo SOMENTE se ele veio do bloqueio da conta (o
+ * telegram.ban mais recente tem cause account_blocked). Ban de moderação continua valendo. Não
+ * readiciona: a pessoa volta a poder pedir entrada. muted_until é preservado, e um silêncio ainda
+ * vigente é reaplicado na volta. Sem vínculo ou com o bot desligado não faz nada; erros da Bot API
+ * propagam para quem chamou decidir.
+ */
+export async function restoreUserAfterReactivation(userId: string, actor: string | null): Promise<void> {
+  const deps = defaultDeps();
+  if (!deps) return;
+  const { api, repo, groupId } = deps;
+
+  const tgId = await repo.telegramIdForUser(userId);
+  if (tgId === null) return;
+  const member = await repo.getMember(tgId);
+  if (member?.status !== "banned") return;
+  if ((await repo.lastBanCause(tgId)) !== BAN_CAUSE_ACCOUNT_BLOCKED) return;
+
+  await api.unbanChatMember(groupId, tgId);
+  await repo.upsertMember(tgId, { status: "left", lastActionBy: actor });
+  await repo.logAction(actor, "telegram.unban", tgId, REACTIVATION_REASON, { cause: "account_reactivated" });
 }
 
 /**

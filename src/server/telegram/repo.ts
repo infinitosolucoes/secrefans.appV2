@@ -89,6 +89,11 @@ export interface TelegramRepo {
   takeDueDeletes(now: Date): Promise<{ chatId: number; messageId: number }[]>;
   /** telegram_user_id vinculado à conta do site; null sem vínculo. */
   telegramIdForUser(userId: string): Promise<number | null>;
+  /**
+   * `metadata.cause` do telegram.ban mais recente deste usuário do Telegram na auditoria
+   * (admin_audit_logs, via service role); null sem ban registrado ou sem causa.
+   */
+  lastBanCause(tgId: number): Promise<string | null>;
   /** Membros com status member/muted (até SWEEP_LIMIT) e o status da conta vinculada. */
   listSweepCandidates(): Promise<SweepCandidate[]>;
   /** Apaga updates vistos há mais de 7 dias e códigos de vínculo expirados. */
@@ -301,6 +306,24 @@ export function createTelegramRepo(db: Db = createServiceSupabase()): TelegramRe
         .maybeSingle();
       if (error) fail("telegramIdForUser", error);
       return data ? data.telegram_user_id : null;
+    },
+
+    async lastBanCause(tgId) {
+      const { data, error } = await db
+        .from("admin_audit_logs")
+        .select("metadata")
+        .eq("action", "telegram.ban")
+        .eq("target_type", "telegram_user")
+        .eq("target_id", String(tgId))
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) fail("lastBanCause", error);
+      const meta = data?.metadata;
+      if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
+      const cause = (meta as Record<string, unknown>).cause;
+      return typeof cause === "string" ? cause : null;
     },
 
     async listSweepCandidates() {

@@ -22,6 +22,7 @@ import {
   deleteGroupMessage,
   muteTelegramUser,
   removeUserFromGroup,
+  restoreUserAfterReactivation,
   sweepGroupMembers,
 } from "@/server/telegram/group";
 
@@ -49,6 +50,7 @@ function fakeRepo(over: Partial<TelegramRepo> = {}): TelegramRepo {
     getMember: vi.fn(async () => ({ status: "member" as const, warnings: 0, mutedUntil: null })),
     upsertMember: vi.fn(async () => {}),
     ensureMember: vi.fn(async () => {}),
+    lastBanCause: vi.fn(async () => "account_blocked"),
     markLeft: vi.fn(async () => {}),
     countRecentHash: vi.fn(async () => 0),
     logAction: vi.fn(async () => {}),
@@ -89,13 +91,15 @@ describe("removeUserFromGroup", () => {
     expect(repo.logAction).not.toHaveBeenCalled();
   });
 
-  it("ban: banChatMember, status banned e log telegram.ban", async () => {
-    await removeUserFromGroup(USER, "conta bloqueada", ADMIN, { ban: true });
+  it("ban: banChatMember, status banned e log telegram.ban com a causa", async () => {
+    await removeUserFromGroup(USER, "conta bloqueada", ADMIN, { ban: true, cause: "account_blocked" });
     expect(repo.telegramIdForUser).toHaveBeenCalledWith(USER);
     expect(api.banChatMember).toHaveBeenCalledWith(GROUP, 555);
     expect(api.kickChatMember).not.toHaveBeenCalled();
     expect(repo.upsertMember).toHaveBeenCalledWith(555, { status: "banned", lastActionBy: ADMIN });
-    expect(repo.logAction).toHaveBeenCalledWith(ADMIN, "telegram.ban", 555, "conta bloqueada");
+    expect(repo.logAction).toHaveBeenCalledWith(ADMIN, "telegram.ban", 555, "conta bloqueada", {
+      cause: "account_blocked",
+    });
   });
 
   it("sem ban: kickChatMember, status left e log telegram.kick", async () => {
@@ -117,6 +121,63 @@ describe("removeUserFromGroup", () => {
     (api.banChatMember as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
     await expect(removeUserFromGroup(USER, "x", ADMIN, { ban: true })).rejects.toThrow("api");
     expect(repo.upsertMember).not.toHaveBeenCalled();
+  });
+});
+
+describe("restoreUserAfterReactivation", () => {
+  const banned = { status: "banned" as const, warnings: 0, mutedUntil: null };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    telegramConfig.mockReturnValue(cfg);
+    api = fakeApi();
+    repo = fakeRepo({ getMember: vi.fn(async () => banned) });
+  });
+
+  it("banido pelo bloqueio da conta: desbane, grava left e audita telegram.unban com a causa", async () => {
+    await restoreUserAfterReactivation(USER, ADMIN);
+    expect(repo.lastBanCause).toHaveBeenCalledWith(555);
+    expect(api.unbanChatMember).toHaveBeenCalledWith(GROUP, 555);
+    expect(repo.upsertMember).toHaveBeenCalledWith(555, { status: "left", lastActionBy: ADMIN });
+    expect(repo.logAction).toHaveBeenCalledWith(ADMIN, "telegram.unban", 555, "conta reativada", {
+      cause: "account_reactivated",
+    });
+  });
+
+  it("último ban por outro motivo (moderação): continua banido", async () => {
+    repo = fakeRepo({ getMember: vi.fn(async () => banned), lastBanCause: vi.fn(async () => null) });
+    await restoreUserAfterReactivation(USER, ADMIN);
+    expect(api.unbanChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+    expect(repo.logAction).not.toHaveBeenCalled();
+  });
+
+  it("não está banido: não faz nada", async () => {
+    repo = fakeRepo();
+    await restoreUserAfterReactivation(USER, ADMIN);
+    expect(repo.lastBanCause).not.toHaveBeenCalled();
+    expect(api.unbanChatMember).not.toHaveBeenCalled();
+  });
+
+  it("sem linha de membro: não faz nada", async () => {
+    repo = fakeRepo({ getMember: vi.fn(async () => null) });
+    await restoreUserAfterReactivation(USER, ADMIN);
+    expect(api.unbanChatMember).not.toHaveBeenCalled();
+  });
+
+  it("sem vínculo ou bot desligado: não faz nada", async () => {
+    repo = fakeRepo({ getMember: vi.fn(async () => banned), telegramIdForUser: vi.fn(async () => null) });
+    await restoreUserAfterReactivation(USER, ADMIN);
+    telegramConfig.mockReturnValue(null);
+    await restoreUserAfterReactivation(USER, ADMIN);
+    expect(api.unbanChatMember).not.toHaveBeenCalled();
+  });
+
+  it("erro da API propaga sem gravar estado nem auditar", async () => {
+    (api.unbanChatMember as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
+    await expect(restoreUserAfterReactivation(USER, ADMIN)).rejects.toThrow("api");
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+    expect(repo.logAction).not.toHaveBeenCalled();
   });
 });
 

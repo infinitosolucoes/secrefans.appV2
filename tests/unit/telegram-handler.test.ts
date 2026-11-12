@@ -52,6 +52,7 @@ function fakeRepo() {
     getMember: vi.fn<TelegramRepo["getMember"]>(async () => null),
     upsertMember: vi.fn(async () => {}),
     ensureMember: vi.fn(async () => {}),
+    lastBanCause: vi.fn<TelegramRepo["lastBanCause"]>(async () => null),
     markLeft: vi.fn(async () => {}),
     countRecentHash: vi.fn(async () => 0),
     logAction: vi.fn(async () => {}),

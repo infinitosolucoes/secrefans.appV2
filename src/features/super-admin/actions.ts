@@ -5,7 +5,11 @@ import { z } from "zod";
 import { requireStaffMfa } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { VERIFICATION_BUCKET } from "@/features/creators/verification";
-import { removeUserFromGroup } from "@/server/telegram/group";
+import {
+  BAN_CAUSE_ACCOUNT_BLOCKED,
+  removeUserFromGroup,
+  restoreUserAfterReactivation,
+} from "@/server/telegram/group";
 
 export interface AdminResult {
   ok: boolean;
@@ -77,12 +81,25 @@ export async function setAccountStatusAction(
   });
   if (error) return { ok: false, message: errorMessage(error.code) };
   revalidatePath(`/super-admin/usuarios/${parsed.data.userId}`);
-  if (parsed.data.status !== "blocked") return { ok: true, message: "Conta reativada." };
+  if (parsed.data.status !== "blocked") {
+    // Desfaz o ban do grupo que veio do bloqueio (ban de moderação fica); falha no Telegram não
+    // desfaz a reativação.
+    let note = "";
+    try {
+      await restoreUserAfterReactivation(parsed.data.userId, admin.id);
+    } catch {
+      note = " (não foi possível liberar o acesso ao grupo do Telegram)";
+    }
+    return { ok: true, message: `Conta reativada.${note}` };
+  }
 
   // Conta bloqueada sai do grupo VIP; falha no Telegram não desfaz o bloqueio.
   let telegramNote = "";
   try {
-    await removeUserFromGroup(parsed.data.userId, parsed.data.reason, admin.id, { ban: true });
+    await removeUserFromGroup(parsed.data.userId, parsed.data.reason, admin.id, {
+      ban: true,
+      cause: BAN_CAUSE_ACCOUNT_BLOCKED,
+    });
   } catch {
     telegramNote = " (não foi possível remover do grupo do Telegram)";
   }
