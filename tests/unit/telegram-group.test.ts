@@ -155,6 +155,18 @@ describe("sweepGroupMembers", () => {
     expect(a.kickChatMember).not.toHaveBeenCalled();
   });
 
+  it("falha ao buscar administradores aborta a varredura sem remover ninguém", async () => {
+    const a = fakeApi();
+    (a.getChatAdministratorIds as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
+    const r = fakeRepo({
+      listSweepCandidates: vi.fn(async () => [{ tgId: 3, accountStatus: null }]),
+    });
+    await expect(sweepGroupMembers({ api: a, repo: r, groupId: GROUP })).rejects.toThrow("api");
+    expect(a.kickChatMember).not.toHaveBeenCalled();
+    expect(r.upsertMember).not.toHaveBeenCalled();
+    expect(r.logAction).not.toHaveBeenCalled();
+  });
+
   it("falha num membro não interrompe os demais", async () => {
     const a = fakeApi();
     (a.kickChatMember as ReturnType<typeof vi.fn>)

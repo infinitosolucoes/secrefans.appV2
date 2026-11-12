@@ -61,15 +61,17 @@ export async function removeUserFromGroup(
 
 /**
  * Varredura diária: expulsa membros (member/muted) sem vínculo ou cuja conta no site não está
- * ativa. Administradores do grupo são preservados. Falha num membro não interrompe os demais.
+ * ativa. Administradores do grupo são preservados; se a lista deles não puder ser obtida, lança
+ * sem remover ninguém. Falha num membro não interrompe os demais.
  */
 export async function sweepGroupMembers(deps?: GroupDeps): Promise<{ removed: number }> {
   const d = deps ?? defaultDeps();
   if (!d) return { removed: 0 };
   const { api, repo, groupId } = d;
 
+  // Sem a lista de admins não dá para preservá-los: a falha propaga e a varredura é abortada.
+  const admins = new Set(await api.getChatAdministratorIds(groupId));
   const candidates = await repo.listSweepCandidates();
-  const admins = new Set(await api.getChatAdministratorIds(groupId).catch(() => [] as number[]));
 
   let removed = 0;
   for (const { tgId, accountStatus } of candidates) {

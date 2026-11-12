@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { serverEnv } from "@/lib/env.server";
-import { createBotApi } from "@/server/telegram/client";
+import { createBotApi, TelegramApiError } from "@/server/telegram/client";
 import { telegramConfig, type TelegramConfig } from "@/server/telegram/config";
 import { sweepGroupMembers } from "@/server/telegram/group";
 import { createTelegramRepo } from "@/server/telegram/repo";
@@ -24,6 +24,15 @@ function loadConfig(): TelegramConfig | null {
  * de vínculo expirados, e apaga as mensagens agendadas que ficaram para trás (grupo sem atividade
  * depois de um comando).
  */
+/** Log sem vazar o token: só mensagens da Bot API ou do repo (operação + código do Postgres). */
+function logFailure(stage: string, err: unknown): void {
+  const safe =
+    err instanceof TelegramApiError ||
+    (err instanceof Error && err.message.startsWith("telegram repo "));
+  const detail = safe ? err.message : "erro interno";
+  console.error(`[telegram-cron] falha em ${stage}: ${detail}`);
+}
+
 export async function GET(request: Request) {
   const secret = serverEnv().CRON_SECRET;
   const auth = request.headers.get("authorization") ?? "";
@@ -39,12 +48,14 @@ export async function GET(request: Request) {
 
   try {
     summary.removed = (await sweepGroupMembers({ api, repo, groupId: config.groupId })).removed;
-  } catch {
+  } catch (err) {
+    logFailure("sweep", err);
     summary.errors++;
   }
   try {
     await repo.purgeStale(new Date());
-  } catch {
+  } catch (err) {
+    logFailure("purge", err);
     summary.errors++;
   }
   try {
@@ -55,7 +66,8 @@ export async function GET(request: Request) {
         () => summary.errors++,
       );
     }
-  } catch {
+  } catch (err) {
+    logFailure("drain", err);
     summary.errors++;
   }
   return NextResponse.json({ ok: true, ...summary });
