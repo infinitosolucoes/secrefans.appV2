@@ -5,14 +5,40 @@ import { PageHeader } from "@/components/ui";
 import { ProfileForm } from "@/features/identity/forms";
 import { CreatorDetailsForm, ProfileImages, SocialsForm } from "@/features/identity/ProfileExtras";
 import { parseSocials } from "@/features/identity/socials";
+import { TelegramCard, type TelegramNotice } from "@/features/telegram/TelegramCard";
 import { requireUser } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
+import { telegramConfig } from "@/server/telegram/config";
 
 export const metadata: Metadata = { title: "Meu perfil" };
 
-export default async function Page() {
+/** Bot ligado? Env malformado (zod lança) conta como desligado. */
+function telegramEnabled(): boolean {
+  try {
+    return telegramConfig() !== null;
+  } catch {
+    return false;
+  }
+}
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ telegram?: string }>;
+}) {
   const user = await requireUser("/conta/perfil");
   const supabase = await createServerSupabase();
+  const { telegram } = await searchParams;
+  const notice: TelegramNotice =
+    telegram === "sem-consentimento" || telegram === "erro" ? telegram : null;
+  const showTelegram = telegramEnabled();
+  const { data: telegramLink } = showTelegram
+    ? await supabase
+        .from("telegram_links")
+        .select("telegram_username")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
   const { data: profile } = await supabase
     .from("profiles")
     .select(
@@ -59,6 +85,12 @@ export default async function Page() {
             creatorType={profile?.creator_type ?? null}
             categories={profile?.categories ?? []}
             links={profile?.links ?? []}
+          />
+        )}
+        {showTelegram && (
+          <TelegramCard
+            linked={telegramLink ? { username: telegramLink.telegram_username } : null}
+            notice={notice}
           />
         )}
       </div>

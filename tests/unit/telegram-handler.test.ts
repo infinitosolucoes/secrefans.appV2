@@ -57,6 +57,9 @@ function fakeRepo() {
     createReport: vi.fn(async () => "rep-1"),
     scheduleDelete: vi.fn(async () => {}),
     takeDueDeletes: vi.fn<TelegramRepo["takeDueDeletes"]>(async () => []),
+    telegramIdForUser: vi.fn<TelegramRepo["telegramIdForUser"]>(async () => null),
+    listSweepCandidates: vi.fn<TelegramRepo["listSweepCandidates"]>(async () => []),
+    purgeStale: vi.fn(async () => {}),
   } satisfies TelegramRepo;
 }
 

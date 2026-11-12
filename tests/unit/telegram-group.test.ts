@@ -1,0 +1,178 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { BotApi } from "@/server/telegram/client";
+import type { TelegramRepo } from "@/server/telegram/repo";
+
+const GROUP = -1001;
+const cfg = { token: "t", webhookSecret: "s", botUsername: "bot", groupId: GROUP };
+
+const telegramConfig = vi.fn();
+let api: BotApi;
+let repo: TelegramRepo;
+
+vi.mock("@/server/telegram/config", () => ({ telegramConfig: () => telegramConfig() }));
+vi.mock("@/server/telegram/client", () => ({
+  createBotApi: vi.fn(() => api),
+  TelegramApiError: class TelegramApiError extends Error {},
+}));
+vi.mock("@/server/telegram/repo", () => ({ createTelegramRepo: vi.fn(() => repo) }));
+
+import { removeUserFromGroup, sweepGroupMembers } from "@/server/telegram/group";
+
+function fakeApi(): BotApi {
+  return {
+    sendMessage: vi.fn(async () => ({ message_id: 1 })),
+    deleteMessage: vi.fn(async () => {}),
+    approveChatJoinRequest: vi.fn(async () => {}),
+    declineChatJoinRequest: vi.fn(async () => {}),
+    createChatInviteLink: vi.fn(async () => "https://t.me/+x"),
+    restrictChatMember: vi.fn(async () => {}),
+    banChatMember: vi.fn(async () => {}),
+    unbanChatMember: vi.fn(async () => {}),
+    kickChatMember: vi.fn(async () => {}),
+    getChatAdministratorIds: vi.fn(async () => []),
+  };
+}
+
+function fakeRepo(over: Partial<TelegramRepo> = {}): TelegramRepo {
+  return {
+    markUpdateSeen: vi.fn(async () => true),
+    getSettings: vi.fn(),
+    consumeLinkCode: vi.fn(),
+    userFor: vi.fn(async () => null),
+    getMember: vi.fn(async () => ({ status: "member" as const, warnings: 0 })),
+    upsertMember: vi.fn(async () => {}),
+    markLeft: vi.fn(async () => {}),
+    countRecentHash: vi.fn(async () => 0),
+    logAction: vi.fn(async () => {}),
+    createReport: vi.fn(async () => "r"),
+    scheduleDelete: vi.fn(async () => {}),
+    takeDueDeletes: vi.fn(async () => []),
+    telegramIdForUser: vi.fn(async () => 555),
+    listSweepCandidates: vi.fn(async () => []),
+    purgeStale: vi.fn(async () => {}),
+    ...over,
+  } as TelegramRepo;
+}
+
+const USER = "11111111-1111-1111-1111-111111111111";
+const ADMIN = "22222222-2222-2222-2222-222222222222";
+
+describe("removeUserFromGroup", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    telegramConfig.mockReturnValue(cfg);
+    api = fakeApi();
+    repo = fakeRepo();
+  });
+
+  it("bot desligado: não faz nada", async () => {
+    telegramConfig.mockReturnValue(null);
+    await removeUserFromGroup(USER, "x", ADMIN);
+    expect(repo.telegramIdForUser).not.toHaveBeenCalled();
+    expect(api.kickChatMember).not.toHaveBeenCalled();
+  });
+
+  it("config que lança conta como bot desligado", async () => {
+    telegramConfig.mockImplementation(() => {
+      throw new Error("zod");
+    });
+    await expect(removeUserFromGroup(USER, "x", ADMIN)).resolves.toBeUndefined();
+    expect(api.kickChatMember).not.toHaveBeenCalled();
+  });
+
+  it("sem vínculo: nenhuma chamada à API", async () => {
+    repo = fakeRepo({ telegramIdForUser: vi.fn(async () => null) });
+    await removeUserFromGroup(USER, "x", ADMIN, { ban: true });
+    expect(api.banChatMember).not.toHaveBeenCalled();
+    expect(api.kickChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+    expect(repo.logAction).not.toHaveBeenCalled();
+  });
+
+  it("ban: banChatMember, status banned e log telegram.ban", async () => {
+    await removeUserFromGroup(USER, "conta bloqueada", ADMIN, { ban: true });
+    expect(repo.telegramIdForUser).toHaveBeenCalledWith(USER);
+    expect(api.banChatMember).toHaveBeenCalledWith(GROUP, 555);
+    expect(api.kickChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).toHaveBeenCalledWith(555, { status: "banned", lastActionBy: ADMIN });
+    expect(repo.logAction).toHaveBeenCalledWith(ADMIN, "telegram.ban", 555, "conta bloqueada");
+  });
+
+  it("sem ban: kickChatMember, status left e log telegram.kick", async () => {
+    await removeUserFromGroup(USER, "desvinculou", USER);
+    expect(api.kickChatMember).toHaveBeenCalledWith(GROUP, 555);
+    expect(api.banChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).toHaveBeenCalledWith(555, { status: "left", lastActionBy: USER });
+    expect(repo.logAction).toHaveBeenCalledWith(USER, "telegram.kick", 555, "desvinculou");
+  });
+
+  it("sem ban e já banido: não chama kick (que desbaniria)", async () => {
+    repo = fakeRepo({ getMember: vi.fn(async () => ({ status: "banned" as const, warnings: 0 })) });
+    await removeUserFromGroup(USER, "desvinculou", USER);
+    expect(api.kickChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+  });
+
+  it("erro da API propaga e não grava estado", async () => {
+    (api.banChatMember as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
+    await expect(removeUserFromGroup(USER, "x", ADMIN, { ban: true })).rejects.toThrow("api");
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+  });
+});
+
+describe("sweepGroupMembers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    telegramConfig.mockReturnValue(cfg);
+  });
+
+  it("remove quem está bloqueado ou sem vínculo", async () => {
+    const a = fakeApi();
+    const r = fakeRepo({
+      listSweepCandidates: vi.fn(async () => [
+        { tgId: 1, accountStatus: "active" as const },
+        { tgId: 2, accountStatus: "blocked" as const },
+        { tgId: 3, accountStatus: null },
+      ]),
+    });
+    const result = await sweepGroupMembers({ api: a, repo: r, groupId: GROUP });
+    expect(result).toEqual({ removed: 2 });
+    expect(a.kickChatMember).toHaveBeenCalledTimes(2);
+    expect(a.kickChatMember).toHaveBeenCalledWith(GROUP, 2);
+    expect(a.kickChatMember).toHaveBeenCalledWith(GROUP, 3);
+    expect(r.upsertMember).toHaveBeenCalledWith(2, { status: "left", lastActionBy: null });
+    expect(r.logAction).toHaveBeenCalledWith(null, "telegram.kick", 3, "conta inativa no site");
+    expect(r.logAction).toHaveBeenCalledTimes(2);
+  });
+
+  it("não remove administradores do grupo", async () => {
+    const a = fakeApi();
+    (a.getChatAdministratorIds as ReturnType<typeof vi.fn>).mockResolvedValue([3]);
+    const r = fakeRepo({
+      listSweepCandidates: vi.fn(async () => [{ tgId: 3, accountStatus: null }]),
+    });
+    expect(await sweepGroupMembers({ api: a, repo: r, groupId: GROUP })).toEqual({ removed: 0 });
+    expect(a.kickChatMember).not.toHaveBeenCalled();
+  });
+
+  it("falha num membro não interrompe os demais", async () => {
+    const a = fakeApi();
+    (a.kickChatMember as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error("api"))
+      .mockResolvedValue(undefined);
+    const r = fakeRepo({
+      listSweepCandidates: vi.fn(async () => [
+        { tgId: 2, accountStatus: "deleted" as const },
+        { tgId: 3, accountStatus: null },
+      ]),
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await sweepGroupMembers({ api: a, repo: r, groupId: GROUP })).toEqual({ removed: 1 });
+    expect(r.upsertMember).toHaveBeenCalledTimes(1);
+  });
+
+  it("sem deps e bot desligado: removed 0", async () => {
+    telegramConfig.mockReturnValue(null);
+    expect(await sweepGroupMembers()).toEqual({ removed: 0 });
+  });
+});

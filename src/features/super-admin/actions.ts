@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireStaffMfa } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { VERIFICATION_BUCKET } from "@/features/creators/verification";
+import { removeUserFromGroup } from "@/server/telegram/group";
 
 export interface AdminResult {
   ok: boolean;
@@ -63,7 +64,7 @@ export async function setAccountStatusAction(
   _: AdminResult | null,
   fd: FormData,
 ): Promise<AdminResult> {
-  await requireStaffMfa("users.manage");
+  const admin = await requireStaffMfa("users.manage");
   const parsed = statusSchema.safeParse(Object.fromEntries(fd));
   if (!parsed.success)
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Dados inválidos." };
@@ -76,10 +77,16 @@ export async function setAccountStatusAction(
   });
   if (error) return { ok: false, message: errorMessage(error.code) };
   revalidatePath(`/super-admin/usuarios/${parsed.data.userId}`);
-  return {
-    ok: true,
-    message: parsed.data.status === "blocked" ? "Conta bloqueada." : "Conta reativada.",
-  };
+  if (parsed.data.status !== "blocked") return { ok: true, message: "Conta reativada." };
+
+  // Conta bloqueada sai do grupo VIP; falha no Telegram não desfaz o bloqueio.
+  let telegramNote = "";
+  try {
+    await removeUserFromGroup(parsed.data.userId, parsed.data.reason, admin.id, { ban: true });
+  } catch {
+    telegramNote = " (não foi possível remover do grupo do Telegram)";
+  }
+  return { ok: true, message: `Conta bloqueada.${telegramNote}` };
 }
 
 const decisionSchema = z.object({

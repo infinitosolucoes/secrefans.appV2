@@ -51,6 +51,15 @@ export interface ReportInput {
   hasMedia: boolean;
 }
 
+export interface SweepCandidate {
+  tgId: number;
+  /** Status da conta vinculada no site; null = sem vínculo. */
+  accountStatus: LinkedUser["status"] | null;
+}
+
+/** Limite de membros avaliados por varredura (consulta única, sem paginação). */
+export const SWEEP_LIMIT = 500;
+
 export interface TelegramRepo {
   /** false = update já visto. */
   markUpdateSeen(updateId: number): Promise<boolean>;
@@ -74,6 +83,12 @@ export interface TelegramRepo {
   scheduleDelete(chatId: number, messageId: number, afterSeconds: number): Promise<void>;
   /** Devolve e remove as exclusões vencidas. */
   takeDueDeletes(now: Date): Promise<{ chatId: number; messageId: number }[]>;
+  /** telegram_user_id vinculado à conta do site; null sem vínculo. */
+  telegramIdForUser(userId: string): Promise<number | null>;
+  /** Membros com status member/muted (até SWEEP_LIMIT) e o status da conta vinculada. */
+  listSweepCandidates(): Promise<SweepCandidate[]>;
+  /** Apaga updates vistos há mais de 7 dias e códigos de vínculo expirados. */
+  purgeStale(now: Date): Promise<void>;
 }
 
 const CONSUME_ERRORS: Record<string, "invalid" | "taken" | "inactive"> = {
@@ -88,6 +103,15 @@ function fail(op: string, error: { code?: string }): never {
 }
 
 const HOUR_MS = 3600 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+/** Tamanho dos lotes de .in() para não estourar o limite de URL do PostgREST. */
+const IN_CHUNK = 100;
+
+function chunks<T>(list: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+}
 
 export function createTelegramRepo(db: Db = createServiceSupabase()): TelegramRepo {
   return {
@@ -254,6 +278,60 @@ export function createTelegramRepo(db: Db = createServiceSupabase()): TelegramRe
         .select("chat_id, message_id");
       if (error) fail("takeDueDeletes", error);
       return data.map((r) => ({ chatId: r.chat_id, messageId: r.message_id }));
+    },
+    async telegramIdForUser(userId) {
+      const { data, error } = await db
+        .from("telegram_links")
+        .select("telegram_user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) fail("telegramIdForUser", error);
+      return data ? data.telegram_user_id : null;
+    },
+
+    async listSweepCandidates() {
+      const members = await db
+        .from("telegram_members")
+        .select("telegram_user_id")
+        .in("status", ["member", "muted"])
+        .order("telegram_user_id")
+        .limit(SWEEP_LIMIT);
+      if (members.error) fail("listSweepCandidates.members", members.error);
+      const tgIds = members.data.map((m) => m.telegram_user_id);
+
+      const userByTg = new Map<number, string>();
+      for (const part of chunks(tgIds, IN_CHUNK)) {
+        const links = await db
+          .from("telegram_links")
+          .select("user_id, telegram_user_id")
+          .in("telegram_user_id", part);
+        if (links.error) fail("listSweepCandidates.links", links.error);
+        for (const l of links.data) userByTg.set(l.telegram_user_id, l.user_id);
+      }
+
+      const statusByUser = new Map<string, LinkedUser["status"]>();
+      for (const part of chunks([...userByTg.values()], IN_CHUNK)) {
+        const profiles = await db.from("profiles").select("id, status").in("id", part);
+        if (profiles.error) fail("listSweepCandidates.profiles", profiles.error);
+        for (const p of profiles.data) statusByUser.set(p.id, p.status);
+      }
+
+      return tgIds.map((tgId) => {
+        const userId = userByTg.get(tgId);
+        // Vínculo sem perfil (não deveria acontecer) conta como conta inativa.
+        const accountStatus = userId ? (statusByUser.get(userId) ?? "deleted") : null;
+        return { tgId, accountStatus };
+      });
+    },
+
+    async purgeStale(now) {
+      const seen = await db
+        .from("telegram_updates_seen")
+        .delete()
+        .lt("seen_at", new Date(now.getTime() - 7 * DAY_MS).toISOString());
+      if (seen.error) fail("purgeStale.updatesSeen", seen.error);
+      const codes = await db.from("telegram_link_codes").delete().lt("expires_at", now.toISOString());
+      if (codes.error) fail("purgeStale.linkCodes", codes.error);
     },
   };
 }
