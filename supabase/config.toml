@@ -439,3 +439,13 @@ max_frequency = "1m0s"
 
 [remotes.hml.storage.vector]
 enabled = false
+
+# SMTP proprio (Resend) no remoto. A chave vem do ambiente (RESEND_API_KEY), nunca do repositorio.
+[remotes.hml.auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "nao-responda@secretfans.app.br"
+sender_name = "Secretfans"
