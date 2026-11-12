@@ -66,7 +66,7 @@ export async function startCheckoutAction(
     const raw = fd.get("amount") === "outro" ? fd.get("customAmount") : fd.get("amount");
     amount = parsePriceToCents(raw);
     if (amount === null || Number.isNaN(amount) || amount < 500 || amount > 100000)
-      return { ok: false, message: "Escolha uma gorjeta entre R$ 5 e R$ 1.000." };
+      return { ok: false, message: "Escolha um mimo entre R$ 5 e R$ 1.000." };
   }
 
   const supabase = await createServerSupabase();
@@ -170,7 +170,10 @@ async function chargeWithAsaas(order: PendingOrder, cpfInput: FormDataEntryValue
         userId: order.buyer_id,
       });
     } catch {
-      return { ok: false, message: "Não foi possível validar seus dados no provedor de pagamentos." };
+      return {
+        ok: false,
+        message: "Não foi possível validar seus dados no provedor de pagamentos.",
+      };
     }
     await db.from("payment_customers").upsert({
       user_id: order.buyer_id,
@@ -200,7 +203,9 @@ async function chargeWithAsaas(order: PendingOrder, cpfInput: FormDataEntryValue
     .eq("provider", "asaas")
     .maybeSingle();
   const split =
-    payout?.status === "approved" ? { walletId: payout.wallet_id, fixedValueCents: creatorNet } : undefined;
+    payout?.status === "approved"
+      ? { walletId: payout.wallet_id, fixedValueCents: creatorNet }
+      : undefined;
 
   const input = {
     orderId: order.id,

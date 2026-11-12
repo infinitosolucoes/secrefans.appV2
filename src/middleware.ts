@@ -86,5 +86,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // Webhooks e cron são chamados por serviços (sem sessão nem cookie +18); autenticam por token.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|brand/|api/webhooks/|api/cron/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|brand/|api/webhooks/|api/cron/).*)",
+  ],
 };

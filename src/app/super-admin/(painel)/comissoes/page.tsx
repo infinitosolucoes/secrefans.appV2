@@ -98,7 +98,7 @@ export default async function Page() {
                 {formatDate(current.effective_from)}
               </p>
               <p className="mt-1 type-caption text-ink-muted">
-                Assinaturas, PPV e pacotes · gorjetas{" "}
+                Assinaturas, PPV e pacotes · mimos{" "}
                 {current.applies_to_tips ? "incluídas" : "isentas"}
               </p>
             </>
@@ -126,7 +126,7 @@ export default async function Page() {
               >
                 <p className="type-label text-ink">
                   v{r.version} · <strong>{formatPercent(r.rate_bps)}</strong> · a partir de{" "}
-                  {formatDateTime(r.effective_from)} · gorjetas{" "}
+                  {formatDateTime(r.effective_from)} · mimos{" "}
                   {r.applies_to_tips ? "incluídas" : "isentas"}
                 </p>
                 <p className="type-caption text-ink-muted">Justificativa: {r.reason}</p>

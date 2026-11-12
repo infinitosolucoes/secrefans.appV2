@@ -213,11 +213,11 @@ export async function getCheckoutItem(
   return {
     kind: "tip",
     targetId: id,
-    title: `Gorjeta para ${name}`,
-    detail: "Apoio direto ao criador",
+    title: `Mimo para ${name}`,
+    detail: "Um carinho direto para o criador",
     priceCents: null,
     creatorHandle: c.handle ?? "",
     creatorName: name,
-    blocked: id === viewerId ? "Você não pode enviar gorjeta para si." : undefined,
+    blocked: id === viewerId ? "Você não pode enviar um mimo para si." : undefined,
   };
 }

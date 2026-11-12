@@ -167,11 +167,11 @@ export default async function PublicProfile({
                   size="md"
                 />
                 <Link
-                  href={checkoutHref("gorjeta", profile.id)}
-                  className={buttonClasses("secondary", "md")}
+                  href={checkoutHref("mimo", profile.id)}
+                  className={buttonClasses("primary", "md")}
                 >
                   <Gift className="size-4" aria-hidden />
-                  Gorjeta
+                  Enviar mimo
                 </Link>
               </>
             )
@@ -313,7 +313,7 @@ export default async function PublicProfile({
       ) : (
         <div className="flex max-w-2xl flex-col gap-4">
           {posts.map((p) => (
-            <PostCard key={p.id} post={p} loggedIn={Boolean(user)} />
+            <PostCard key={p.id} post={p} loggedIn={Boolean(user)} viewerId={user?.id} />
           ))}
         </div>
       )}

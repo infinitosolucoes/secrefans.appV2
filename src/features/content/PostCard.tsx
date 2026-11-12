@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Crown, Lock, MessageCircle } from "lucide-react";
+import { BadgeCheck, Crown, Gift, Lock, MessageCircle } from "lucide-react";
 import { Avatar } from "@/components/domain/Avatar";
 import { Badge, buttonClasses } from "@/components/ui";
 import { checkoutHref } from "@/features/commerce/constants";
@@ -92,12 +92,16 @@ export function PostCard({
   loggedIn,
   verified = true,
   linkToPost = true,
+  viewerId,
 }: {
   post: FeedPost;
   loggedIn: boolean;
   verified?: boolean;
   linkToPost?: boolean;
+  /** Quem está vendo: o próprio criador não vê o botão de mimo nos seus posts. */
+  viewerId?: string | null;
 }) {
+  const canGift = viewerId !== post.creatorId;
   const name = post.displayName || post.handle;
   const badgeTone = post.visibility === "free" ? "neutral" : "accent";
   return (
@@ -159,6 +163,16 @@ export function PostCard({
             <MessageCircle className="size-5" aria-hidden />
             {post.commentCount}
           </span>
+        )}
+        {canGift && (
+          <Link
+            href={checkoutHref("mimo", post.creatorId)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-pill px-3 type-label text-ink-muted hover:text-accent-text"
+            aria-label={`Enviar um mimo para ${name}`}
+          >
+            <Gift className="size-5" aria-hidden />
+            Mimo
+          </Link>
         )}
         <span className="ml-auto">
           <ReportButton targetType="post" targetId={post.id} loggedIn={loggedIn} />

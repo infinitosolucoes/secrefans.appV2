@@ -31,7 +31,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         >
           ← {user ? "Voltar ao feed" : `Perfil de @${post.handle}`}
         </Link>
-        <PostCard post={post} loggedIn={Boolean(user)} linkToPost={false} />
+        <PostCard post={post} loggedIn={Boolean(user)} linkToPost={false} viewerId={user?.id} />
 
         <section aria-labelledby="comentarios" className="flex flex-col gap-4">
           <h2 id="comentarios" className="type-feature-title text-ink">

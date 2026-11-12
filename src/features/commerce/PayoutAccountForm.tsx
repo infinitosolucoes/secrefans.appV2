@@ -23,8 +23,8 @@ export function LinkWalletForm() {
         <Field name="document" label="CPF ou CNPJ titular" inputMode="numeric" required />
       </div>
       <p className="type-caption text-ink-muted">
-        No Asaas: Menu do usuário → Integrações → Chave de API → Wallet ID (ou Minha conta →
-        Dados comerciais). Nunca envie sua chave de API, só o Wallet ID.
+        No Asaas: Menu do usuário → Integrações → Chave de API → Wallet ID (ou Minha conta → Dados
+        comerciais). Nunca envie sua chave de API, só o Wallet ID.
       </p>
       <Checkbox name="confirm" required>
         Confirmo que esta conta Asaas é minha e autorizo receber nela a minha parte das vendas.

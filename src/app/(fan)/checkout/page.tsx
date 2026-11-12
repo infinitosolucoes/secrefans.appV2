@@ -50,12 +50,7 @@ export default async function Page({
             </Alert>
           ) : (
             <section className="rounded-lg border border-border bg-surface-alt p-5 md:p-6">
-              <CheckoutForm
-                slug={slug}
-                id={id}
-                priceCents={item.priceCents}
-                needsCpf={needsCpf}
-              />
+              <CheckoutForm slug={slug} id={id} priceCents={item.priceCents} needsCpf={needsCpf} />
             </section>
           )}
           {provider === "simulado" ? (

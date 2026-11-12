@@ -95,7 +95,8 @@ export async function setPaymentFeeAction(
     p_bps: parsed.data.percent,
     p_reason: parsed.data.reason,
   });
-  if (error) return { ok: false, message: messages[error.code ?? ""] ?? "Não foi possível salvar." };
+  if (error)
+    return { ok: false, message: messages[error.code ?? ""] ?? "Não foi possível salvar." };
   revalidatePath("/super-admin/financeiro");
   return { ok: true, message: "Taxa atualizada para os próximos pedidos." };
 }

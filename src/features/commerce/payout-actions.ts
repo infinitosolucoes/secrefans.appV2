@@ -65,10 +65,15 @@ export async function linkExistingWalletAction(
   fd: FormData,
 ): Promise<PayoutResult> {
   const user = await requireRole(["creator"], "/estudio/recebimentos");
-  const walletId = String(fd.get("walletId") ?? "").trim().toLowerCase();
+  const walletId = String(fd.get("walletId") ?? "")
+    .trim()
+    .toLowerCase();
   const document = onlyDigits(fd.get("document"));
   if (!UUID.test(walletId))
-    return { ok: false, message: "O Wallet ID tem o formato 00000000-0000-0000-0000-000000000000." };
+    return {
+      ok: false,
+      message: "O Wallet ID tem o formato 00000000-0000-0000-0000-000000000000.",
+    };
   if (!isValidCpf(document) && !isValidCnpj(document))
     return { ok: false, message: "Informe o CPF ou CNPJ titular da conta Asaas." };
   if (fd.get("confirm") !== "on")
@@ -165,7 +170,8 @@ export async function registerPayoutAccountAction(
   } catch (e) {
     const detail =
       e instanceof AsaasError
-        ? ((e.details as { errors?: Array<{ description?: string }> })?.errors?.[0]?.description ?? "")
+        ? ((e.details as { errors?: Array<{ description?: string }> })?.errors?.[0]?.description ??
+          "")
         : "";
     return {
       ok: false,

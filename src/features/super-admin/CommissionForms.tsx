@@ -74,7 +74,7 @@ export function ProposeCommissionForm({ minDate }: { minDate: string }) {
         />
       </div>
       <Checkbox name="appliesToTips" defaultChecked>
-        Comissão incide também sobre gorjetas
+        Comissão incide também sobre mimos
       </Checkbox>
       <div>
         <Label htmlFor="reason">Justificativa (vai para a auditoria)</Label>

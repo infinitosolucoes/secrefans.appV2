@@ -68,7 +68,9 @@ export async function GET(request: Request) {
         chargeId: payment.id,
         status,
         netCents:
-          status === "paid" && payment.netValue != null ? Math.round(payment.netValue * 100) : undefined,
+          status === "paid" && payment.netValue != null
+            ? Math.round(payment.netValue * 100)
+            : undefined,
       });
       if (result === "duplicate" || result === "ignored") summary.unchanged++;
       else summary.applied++;

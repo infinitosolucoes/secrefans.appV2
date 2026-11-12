@@ -158,10 +158,11 @@ export class AsaasPaymentProvider {
       checkoutUrl: p.invoiceUrl,
     };
     if (p.billingType === "PIX") {
-      const qr = await this.request<{ encodedImage: string; payload: string; expirationDate?: string }>(
-        "GET",
-        `/payments/${p.id}/pixQrCode`,
-      );
+      const qr = await this.request<{
+        encodedImage: string;
+        payload: string;
+        expirationDate?: string;
+      }>("GET", `/payments/${p.id}/pixQrCode`);
       result.pix = {
         copyPaste: qr.payload,
         qrCodeBase64: qr.encodedImage,
@@ -306,7 +307,8 @@ export class AsaasPaymentProvider {
       payload: { event: body.event, payment: { id: payment.id, status: payment.status } },
       chargeId: payment.id,
       status,
-      netCents: status === "paid" && payment.netValue != null ? toCents(payment.netValue) : undefined,
+      netCents:
+        status === "paid" && payment.netValue != null ? toCents(payment.netValue) : undefined,
       subscriptionId: payment.subscription ?? undefined,
     };
   }

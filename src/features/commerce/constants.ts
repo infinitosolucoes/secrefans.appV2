@@ -5,6 +5,8 @@ export const CHECKOUT_KINDS = {
   ppv: "ppv",
   pacote: "package",
   assinatura: "subscription",
+  mimo: "tip",
+  /** Nome antigo do mimo: mantido para links já compartilhados. */
   gorjeta: "tip",
 } as const satisfies Record<string, OrderKind>;
 
@@ -16,7 +18,7 @@ export const ORDER_KIND_LABEL: Record<OrderKind, string> = {
   subscription: "Assinatura",
   ppv: "PPV",
   package: "Pacote",
-  tip: "Gorjeta",
+  tip: "Mimo",
 };
 
 export const ORDER_STATUS: Record<

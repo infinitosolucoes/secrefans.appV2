@@ -23,7 +23,7 @@ export function CheckoutForm({
   const idempotencyKey = useMemo(() => crypto.randomUUID(), []);
   const [method, setMethod] = useState<"pix" | "card">("pix");
   const [tip, setTip] = useState<string>(String(TIP_OPTIONS[1]));
-  const isTip = slug === "gorjeta";
+  const isTip = slug === "mimo" || slug === "gorjeta";
   const total = isTip ? (tip === "outro" ? null : Number(tip)) : priceCents;
 
   const methodCard = (value: "pix" | "card", title: string, hint: string, Icon: typeof Zap) => (
@@ -59,7 +59,7 @@ export function CheckoutForm({
 
       {isTip && (
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-1 type-label font-semibold text-ink">Valor da gorjeta</legend>
+          <legend className="mb-1 type-label font-semibold text-ink">Valor do mimo</legend>
           <div className="flex flex-wrap gap-2">
             {[...TIP_OPTIONS.map(String), "outro"].map((v) => (
               <label

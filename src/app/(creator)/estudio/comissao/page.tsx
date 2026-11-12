@@ -73,7 +73,7 @@ export default async function Page() {
                     Li e concordo com esta regra
                   </button>
                   <p className="mt-2 type-caption text-ink-muted">
-                    Necessário para começar a vender assinaturas, PPV, pacotes e receber gorjetas.
+                    Necessário para começar a vender assinaturas, PPV, pacotes e receber mimos.
                   </p>
                 </form>
               )}
@@ -88,7 +88,7 @@ export default async function Page() {
                   ["Assinaturas de fãs", "Incide"],
                   ["Vendas PPV", "Incide"],
                   ["Pacotes de fotos e vídeos", "Incide"],
-                  ["Gorjetas", rule.appliesToTips ? "Incide" : "Não incide"],
+                  ["Mimos", rule.appliesToTips ? "Incide" : "Não incide"],
                 ].map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-4 py-2.5">
                     <span className="text-ink">{k}</span>

@@ -91,7 +91,7 @@ export default async function Page({
                 }
               />
             ) : (
-              posts.map((p) => <PostCard key={p.id} post={p} loggedIn />)
+              posts.map((p) => <PostCard key={p.id} post={p} loggedIn viewerId={user.id} />)
             )}
           </div>
         </div>

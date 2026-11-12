@@ -51,11 +51,14 @@ export default async function Page() {
     if (!kind) continue;
     // Ativo (clearing) cresce no débito; receita/obrigações crescem no crédito.
     totals[kind] +=
-      kind === "provider_clearing" ? l.debit_cents - l.credit_cents : l.credit_cents - l.debit_cents;
+      kind === "provider_clearing"
+        ? l.debit_cents - l.credit_cents
+        : l.credit_cents - l.debit_cents;
   }
   const currentFee = (method: "pix" | "card") =>
     (fees ?? []).find(
-      (f) => f.provider === "asaas" && f.method === method && new Date(f.effective_from) <= new Date(),
+      (f) =>
+        f.provider === "asaas" && f.method === method && new Date(f.effective_from) <= new Date(),
     );
 
   return (
@@ -103,7 +106,10 @@ export default async function Page() {
             </tbody>
           </Table>
         ) : (
-          <EmptyState title="Nada pendente" description="A conciliação diária não encontrou pendências." />
+          <EmptyState
+            title="Nada pendente"
+            description="A conciliação diária não encontrou pendências."
+          />
         )}
       </section>
 
@@ -126,7 +132,10 @@ export default async function Page() {
             </tbody>
           </Table>
         ) : (
-          <EmptyState title="Sem eventos ainda" description="Os webhooks do provedor aparecem aqui." />
+          <EmptyState
+            title="Sem eventos ainda"
+            description="Os webhooks do provedor aparecem aqui."
+          />
         )}
       </section>
 
@@ -143,7 +152,9 @@ export default async function Page() {
               <div key={m} className="rounded-lg border border-border bg-surface-alt p-5">
                 <p className="mb-3 type-label font-semibold text-ink">
                   {m === "pix" ? "Pix" : "Cartão de crédito"}:{" "}
-                  {f ? `${formatBRL(f.fixed_cents)} + ${(f.bps / 100).toLocaleString("pt-BR")}%` : "sem taxa"}
+                  {f
+                    ? `${formatBRL(f.fixed_cents)} + ${(f.bps / 100).toLocaleString("pt-BR")}%`
+                    : "sem taxa"}
                 </p>
                 {canManage && (
                   <PaymentFeeForm method={m} fixedCents={f?.fixed_cents ?? 0} bps={f?.bps ?? 0} />

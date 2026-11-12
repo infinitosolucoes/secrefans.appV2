@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isSimulatedAllowed,
-  type SimulatedPolicyInput,
-} from "@/server/providers/payments/policy";
+import { isSimulatedAllowed, type SimulatedPolicyInput } from "@/server/providers/payments/policy";
 
 const base: SimulatedPolicyInput = {
   provider: "simulado",
@@ -27,9 +24,9 @@ describe("isSimulatedAllowed", () => {
   });
 
   it("bloqueia a produção real mesmo com a flag ligada", () => {
-    expect(
-      isSimulatedAllowed({ ...base, vercelEnv: "production", allowSimulated: true }),
-    ).toBe(false);
+    expect(isSimulatedAllowed({ ...base, vercelEnv: "production", allowSimulated: true })).toBe(
+      false,
+    );
   });
 
   it("libera o deploy de produção do projeto de homologação (APP_STAGE=hml + flag)", () => {

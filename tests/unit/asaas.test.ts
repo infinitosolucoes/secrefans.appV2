@@ -11,7 +11,12 @@ import { isValidCnpj, isValidCpf, last4 } from "@/lib/cpf";
 const TOKEN = "t".repeat(40);
 
 function fakeFetch(routes: Record<string, unknown>) {
-  const calls: Array<{ method: string; url: string; body?: unknown; headers: Record<string, string> }> = [];
+  const calls: Array<{
+    method: string;
+    url: string;
+    body?: unknown;
+    headers: Record<string, string>;
+  }> = [];
   const impl = vi.fn(async (url: string, init: RequestInit) => {
     const method = init.method ?? "GET";
     const path = url.replace(/^https:\/\/api-sandbox\.asaas\.com\/v3/, "");
@@ -33,7 +38,12 @@ function fakeFetch(routes: Record<string, unknown>) {
 const provider = (routes: Record<string, unknown>) => {
   const f = fakeFetch(routes);
   return {
-    p: new AsaasPaymentProvider({ apiKey: "k".repeat(30), env: "sandbox", webhookToken: TOKEN, fetchImpl: f.impl }),
+    p: new AsaasPaymentProvider({
+      apiKey: "k".repeat(30),
+      env: "sandbox",
+      webhookToken: TOKEN,
+      fetchImpl: f.impl,
+    }),
     calls: f.calls,
   };
 };
@@ -68,8 +78,18 @@ describe("normalizeAsaasStatus", () => {
 describe("AsaasPaymentProvider", () => {
   it("cria cobrança Pix com split fixo e busca o QR", async () => {
     const { p, calls } = provider({
-      "POST /payments": { id: "pay_1", status: "PENDING", value: 19.9, billingType: "PIX", invoiceUrl: "https://x/i/1" },
-      "GET /payments/pay_1/pixQrCode": { encodedImage: "QUJD", payload: "000201...", expirationDate: "2026-11-12 23:59:59" },
+      "POST /payments": {
+        id: "pay_1",
+        status: "PENDING",
+        value: 19.9,
+        billingType: "PIX",
+        invoiceUrl: "https://x/i/1",
+      },
+      "GET /payments/pay_1/pixQrCode": {
+        encodedImage: "QUJD",
+        payload: "000201...",
+        expirationDate: "2026-11-12 23:59:59",
+      },
     });
     const r = await p.createCharge({
       orderId: "o-1",
@@ -87,7 +107,11 @@ describe("AsaasPaymentProvider", () => {
       externalReference: "o-1",
       split: [{ walletId: "w-1", fixedValue: 16.92 }],
     });
-    expect(r).toMatchObject({ providerChargeId: "pay_1", amount: 1990, pix: { copyPaste: "000201...", qrCodeBase64: "QUJD" } });
+    expect(r).toMatchObject({
+      providerChargeId: "pay_1",
+      amount: 1990,
+      pix: { copyPaste: "000201...", qrCodeBase64: "QUJD" },
+    });
   });
 
   it("cliente novo entra no grupo secrefans.app", async () => {
@@ -99,9 +123,21 @@ describe("AsaasPaymentProvider", () => {
 
   it("cartão devolve a página segura do Asaas, sem QR", async () => {
     const { p, calls } = provider({
-      "POST /payments": { id: "pay_2", status: "PENDING", value: 29.9, billingType: "CREDIT_CARD", invoiceUrl: "https://x/i/2" },
+      "POST /payments": {
+        id: "pay_2",
+        status: "PENDING",
+        value: 29.9,
+        billingType: "CREDIT_CARD",
+        invoiceUrl: "https://x/i/2",
+      },
     });
-    const r = await p.createCharge({ orderId: "o-2", customerId: "c", amount: 2990, method: "card", description: "x" });
+    const r = await p.createCharge({
+      orderId: "o-2",
+      customerId: "c",
+      amount: 2990,
+      method: "card",
+      description: "x",
+    });
     expect(calls).toHaveLength(1);
     expect(calls[0]!.body).toMatchObject({ billingType: "CREDIT_CARD" });
     expect(r.checkoutUrl).toBe("https://x/i/2");
@@ -111,9 +147,25 @@ describe("AsaasPaymentProvider", () => {
   it("assinatura devolve a primeira cobrança", async () => {
     const { p } = provider({
       "POST /subscriptions": { id: "sub_1" },
-      "GET /subscriptions/sub_1/payments": { data: [{ id: "pay_s1", status: "PENDING", value: 29.9, billingType: "CREDIT_CARD", invoiceUrl: "u" }] },
+      "GET /subscriptions/sub_1/payments": {
+        data: [
+          {
+            id: "pay_s1",
+            status: "PENDING",
+            value: 29.9,
+            billingType: "CREDIT_CARD",
+            invoiceUrl: "u",
+          },
+        ],
+      },
     });
-    const r = await p.createSubscription({ orderId: "o", customerId: "c", amount: 2990, method: "card", description: "Assinatura" });
+    const r = await p.createSubscription({
+      orderId: "o",
+      customerId: "c",
+      amount: 2990,
+      method: "card",
+      description: "Assinatura",
+    });
     expect(r.subscriptionId).toBe("sub_1");
     expect(r.charge.providerChargeId).toBe("pay_s1");
   });
@@ -121,7 +173,13 @@ describe("AsaasPaymentProvider", () => {
   it("não repete POST em erro 5xx (evita cobrança duplicada)", async () => {
     const { p, calls } = provider({ "POST /payments": new Response("{}", { status: 503 }) });
     await expect(
-      p.createCharge({ orderId: "o", customerId: "c", amount: 1000, method: "card", description: "x" }),
+      p.createCharge({
+        orderId: "o",
+        customerId: "c",
+        amount: 1000,
+        method: "card",
+        description: "x",
+      }),
     ).rejects.toBeInstanceOf(AsaasError);
     expect(calls).toHaveLength(1);
   });
@@ -136,9 +194,19 @@ describe("AsaasPaymentProvider", () => {
 
   it("webhook confia no status e no líquido da API, não no corpo", async () => {
     const { p } = provider({
-      "GET /payments/pay_9": { id: "pay_9", status: "RECEIVED", value: 19.9, netValue: 18.8, subscription: "sub_7" },
+      "GET /payments/pay_9": {
+        id: "pay_9",
+        status: "RECEIVED",
+        value: 19.9,
+        netValue: 18.8,
+        subscription: "sub_7",
+      },
     });
-    const body = JSON.stringify({ id: "evt_1", event: "PAYMENT_RECEIVED", payment: { id: "pay_9", status: "FORJADO", value: 1 } });
+    const body = JSON.stringify({
+      id: "evt_1",
+      event: "PAYMENT_RECEIVED",
+      payment: { id: "pay_9", status: "FORJADO", value: 1 },
+    });
     const e = await p.verifyWebhook(new Headers({ "asaas-access-token": TOKEN }), body);
     expect(e).toMatchObject({
       provider: "asaas",
@@ -151,11 +219,22 @@ describe("AsaasPaymentProvider", () => {
   });
 
   it("eventos que não mudam o pedido são ignorados", async () => {
-    const { p } = provider({ "GET /payments/pay_3": { id: "pay_3", status: "PENDING", value: 10 } });
-    const body = JSON.stringify({ id: "evt_2", event: "PAYMENT_CREATED", payment: { id: "pay_3" } });
-    await expect(p.verifyWebhook(new Headers({ "asaas-access-token": TOKEN }), body)).rejects.toBeInstanceOf(IgnoredEvent);
+    const { p } = provider({
+      "GET /payments/pay_3": { id: "pay_3", status: "PENDING", value: 10 },
+    });
+    const body = JSON.stringify({
+      id: "evt_2",
+      event: "PAYMENT_CREATED",
+      payment: { id: "pay_3" },
+    });
     await expect(
-      p.verifyWebhook(new Headers({ "asaas-access-token": TOKEN }), JSON.stringify({ id: "e", event: "TRANSFER_DONE" })),
+      p.verifyWebhook(new Headers({ "asaas-access-token": TOKEN }), body),
+    ).rejects.toBeInstanceOf(IgnoredEvent);
+    await expect(
+      p.verifyWebhook(
+        new Headers({ "asaas-access-token": TOKEN }),
+        JSON.stringify({ id: "e", event: "TRANSFER_DONE" }),
+      ),
     ).rejects.toBeInstanceOf(IgnoredEvent);
   });
 });
