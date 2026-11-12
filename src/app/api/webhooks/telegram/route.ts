@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
 import { createBotApi, TelegramApiError } from "@/server/telegram/client";
-import { telegramConfig, type TelegramConfig } from "@/server/telegram/config";
+import { telegramConfig } from "@/server/telegram/config";
 import { handleUpdate } from "@/server/telegram/handler";
 import { createTelegramRepo } from "@/server/telegram/repo";
 import type { Update } from "@/server/telegram/types";
@@ -12,15 +12,6 @@ export const maxDuration = 30;
 const sha = (s: string) => createHash("sha256").update(s).digest();
 
 const ok = () => NextResponse.json({ ok: true });
-
-/** Config do bot; env malformado (zod lança) conta como bot desligado. */
-function loadConfig(): TelegramConfig | null {
-  try {
-    return telegramConfig();
-  } catch {
-    return null;
-  }
-}
 
 /** Log sem vazar o token: só nome/mensagem de erro da Bot API ou texto genérico. */
 function logFailure(stage: string, err: unknown): void {
@@ -34,7 +25,7 @@ function logFailure(stage: string, err: unknown): void {
  * duplicatas são descartadas por update_id.
  */
 export async function POST(request: Request) {
-  const config = loadConfig();
+  const config = telegramConfig();
   if (!config) return new NextResponse(null, { status: 404 });
 
   const received = request.headers.get("x-telegram-bot-api-secret-token") ?? "";

@@ -44,14 +44,6 @@ describe("POST /api/webhooks/telegram", () => {
     expect((await POST(req(update))).status).toBe(404);
   });
 
-  it("config que lança (env malformado) -> 404", async () => {
-    telegramConfig.mockImplementation(() => {
-      throw new Error("zod");
-    });
-    expect((await POST(req(update))).status).toBe(404);
-    expect(handleUpdate).not.toHaveBeenCalled();
-  });
-
   it("segredo ausente ou errado -> 401 sem chamar o handler", async () => {
     expect((await POST(req(update, null))).status).toBe(401);
     expect((await POST(req(update, "errado"))).status).toBe(401);

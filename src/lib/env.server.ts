@@ -24,20 +24,6 @@ const serverSchema = z.object({
   /** E-mails de notificação (Resend). Sem a chave, as notificações ficam só no site. */
   RESEND_API_KEY: z.string().min(10).optional(),
   EMAIL_FROM: z.string().min(5).default("Secretfans <nao-responda@secretfans.app.br>"),
-  /** Bot de moderação do Telegram. Sem qualquer uma das quatro, o bot fica desligado. */
-  TELEGRAM_BOT_TOKEN: z.string().min(30).optional(),
-  TELEGRAM_WEBHOOK_SECRET: z
-    .string()
-    .regex(/^[A-Za-z0-9_-]{32,256}$/)
-    .optional(),
-  TELEGRAM_BOT_USERNAME: z
-    .string()
-    .regex(/^[A-Za-z0-9_]{5,32}$/)
-    .optional(),
-  TELEGRAM_GROUP_ID: z
-    .string()
-    .regex(/^-?\d+$/)
-    .optional(),
 });
 
 export function serverEnv() {
@@ -53,9 +39,5 @@ export function serverEnv() {
     CRON_SECRET: process.env.CRON_SECRET || undefined,
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
     EMAIL_FROM: process.env.EMAIL_FROM || undefined,
-    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || undefined,
-    TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET || undefined,
-    TELEGRAM_BOT_USERNAME: process.env.TELEGRAM_BOT_USERNAME || undefined,
-    TELEGRAM_GROUP_ID: process.env.TELEGRAM_GROUP_ID || undefined,
   });
 }

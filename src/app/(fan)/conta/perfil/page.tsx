@@ -12,15 +12,6 @@ import { telegramConfig } from "@/server/telegram/config";
 
 export const metadata: Metadata = { title: "Meu perfil" };
 
-/** Bot ligado? Env malformado (zod lança) conta como desligado. */
-function telegramEnabled(): boolean {
-  try {
-    return telegramConfig() !== null;
-  } catch {
-    return false;
-  }
-}
-
 export default async function Page({
   searchParams,
 }: {
@@ -31,7 +22,8 @@ export default async function Page({
   const { telegram } = await searchParams;
   const notice: TelegramNotice =
     telegram === "sem-consentimento" || telegram === "erro" ? telegram : null;
-  const showTelegram = telegramEnabled();
+  // Bot ligado? Env ausente ou malformado devolve null (bot desligado).
+  const showTelegram = telegramConfig() !== null;
   const { data: telegramLink } = showTelegram
     ? await supabase
         .from("telegram_links")

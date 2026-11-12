@@ -4,23 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
 import { createServerSupabase, createServiceSupabase } from "@/server/auth/supabase";
-import { telegramConfig, type TelegramConfig } from "@/server/telegram/config";
+import { telegramConfig } from "@/server/telegram/config";
 import { removeUserFromGroup } from "@/server/telegram/group";
 
 const PROFILE = "/conta/perfil";
 
-function loadConfig(): TelegramConfig | null {
-  try {
-    return telegramConfig();
-  } catch {
-    return null;
-  }
-}
-
 /** Gera um código de vínculo e manda o usuário para o bot com ?start=<código>. */
 export async function startTelegramLinkAction(): Promise<void> {
   const user = await requireUser(PROFILE);
-  const config = loadConfig();
+  const config = telegramConfig();
   if (!config) redirect(PROFILE);
 
   const db = createServiceSupabase();
@@ -33,7 +25,7 @@ export async function startTelegramLinkAction(): Promise<void> {
 /** Tira o usuário do grupo e apaga o vínculo (delete pelo client do usuário, sob RLS). */
 export async function unlinkTelegramAction(): Promise<void> {
   const user = await requireUser(PROFILE);
-  if (!loadConfig()) redirect(PROFILE);
+  if (!telegramConfig()) redirect(PROFILE);
 
   try {
     await removeUserFromGroup(user.id, "desvinculou", user.id);

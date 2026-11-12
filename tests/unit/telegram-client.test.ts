@@ -123,6 +123,29 @@ describe("telegramConfig", () => {
     expect(telegramConfig()).toBeNull();
   });
 
+  it("valor malformado: devolve null e loga só o nome da variável", () => {
+    stubAll();
+    vi.stubEnv("TELEGRAM_GROUP_ID", "nao-numero");
+    vi.stubEnv("TELEGRAM_WEBHOOK_SECRET", "curto!");
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(telegramConfig()).toBeNull();
+    expect(spy).toHaveBeenCalledTimes(1);
+    const logged = String(spy.mock.calls[0]?.[0]);
+    expect(logged).toContain("TELEGRAM_GROUP_ID");
+    expect(logged).toContain("TELEGRAM_WEBHOOK_SECRET");
+    expect(logged).not.toContain("nao-numero");
+    expect(logged).not.toContain("curto!");
+    expect(logged).not.toContain(TOKEN);
+    spy.mockRestore();
+  });
+
+  it("variável do Telegram malformada não quebra serverEnv()", async () => {
+    stubAll();
+    vi.stubEnv("TELEGRAM_BOT_TOKEN", "curto");
+    const { serverEnv } = await import("@/lib/env.server");
+    expect(() => serverEnv()).not.toThrow();
+  });
+
   it("converte TELEGRAM_GROUP_ID em número", () => {
     stubAll();
     expect(telegramConfig()).toEqual({

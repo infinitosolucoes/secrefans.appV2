@@ -79,14 +79,6 @@ describe("removeUserFromGroup", () => {
     expect(api.kickChatMember).not.toHaveBeenCalled();
   });
 
-  it("config que lança conta como bot desligado", async () => {
-    telegramConfig.mockImplementation(() => {
-      throw new Error("zod");
-    });
-    await expect(removeUserFromGroup(USER, "x", ADMIN)).resolves.toBeUndefined();
-    expect(api.kickChatMember).not.toHaveBeenCalled();
-  });
-
   it("sem vínculo: nenhuma chamada à API", async () => {
     repo = fakeRepo({ telegramIdForUser: vi.fn(async () => null) });
     await removeUserFromGroup(USER, "x", ADMIN, { ban: true });

@@ -1,6 +1,6 @@
 import "server-only";
 import { createBotApi, TelegramApiError, type BotApi } from "./client";
-import { telegramConfig, type TelegramConfig } from "./config";
+import { telegramConfig } from "./config";
 import { publicEnv } from "@/lib/env";
 import type { Ctx } from "./handler";
 import { applyBan, applyMute } from "./punishments";
@@ -14,17 +14,8 @@ export interface GroupDeps {
 
 const SWEEP_REASON = "conta inativa no site";
 
-/** Config do bot; env malformado (zod lança) conta como bot desligado. */
-function loadConfig(): TelegramConfig | null {
-  try {
-    return telegramConfig();
-  } catch {
-    return null;
-  }
-}
-
 function defaultDeps(): GroupDeps | null {
-  const config = loadConfig();
+  const config = telegramConfig();
   if (!config) return null;
   return { api: createBotApi(config.token), repo: createTelegramRepo(), groupId: config.groupId };
 }
@@ -97,7 +88,7 @@ export async function sweepGroupMembers(deps?: GroupDeps): Promise<{ removed: nu
 // decisão da denúncia só é registrada se a ação no Telegram tiver acontecido.
 
 function requireCtx(): Ctx {
-  const config = loadConfig();
+  const config = telegramConfig();
   if (!config) throw new Error("Bot do Telegram desligado.");
   return {
     api: createBotApi(config.token),

@@ -2,21 +2,13 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { serverEnv } from "@/lib/env.server";
 import { createBotApi, TelegramApiError } from "@/server/telegram/client";
-import { telegramConfig, type TelegramConfig } from "@/server/telegram/config";
+import { telegramConfig } from "@/server/telegram/config";
 import { sweepGroupMembers } from "@/server/telegram/group";
 import { createTelegramRepo } from "@/server/telegram/repo";
 
 export const maxDuration = 60;
 
 const sha = (s: string) => createHash("sha256").update(s).digest();
-
-function loadConfig(): TelegramConfig | null {
-  try {
-    return telegramConfig();
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Manutenção diária do bot (Vercel Cron, Authorization: Bearer CRON_SECRET): varre o grupo
@@ -39,7 +31,7 @@ export async function GET(request: Request) {
   if (!secret || !timingSafeEqual(sha(auth), sha(`Bearer ${secret}`)))
     return NextResponse.json({ ok: false }, { status: 401 });
 
-  const config = loadConfig();
+  const config = telegramConfig();
   if (!config) return NextResponse.json({ ok: true, skipped: true });
 
   const api = createBotApi(config.token);
