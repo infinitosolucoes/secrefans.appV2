@@ -59,6 +59,8 @@ export interface TelegramRepo {
   userFor(tgId: number): Promise<LinkedUser | null>;
   getMember(tgId: number): Promise<MemberState | null>;
   upsertMember(tgId: number, patch: MemberPatch): Promise<void>;
+  /** Marca "left" de forma condicional: nunca sobrescreve "banned"; cria a linha se não existir. */
+  markLeft(tgId: number): Promise<void>;
   /** Conta as mensagens iguais na janela (sem a atual), grava a atual e apaga as com mais de 1h. */
   countRecentHash(tgId: number, hash: string, windowSeconds: number): Promise<number>;
   logAction(
@@ -160,6 +162,26 @@ export function createTelegramRepo(db: Db = createServiceSupabase()): TelegramRe
       if (patch.lastActionBy !== undefined) row.last_action_by = patch.lastActionBy;
       const { error } = await db.from("telegram_members").upsert(row, { onConflict: "telegram_user_id" });
       if (error) fail("upsertMember", error);
+    },
+
+    async markLeft(tgId) {
+      const updatedAt = new Date().toISOString();
+      const upd = await db
+        .from("telegram_members")
+        .update({ status: "left", updated_at: updatedAt })
+        .eq("telegram_user_id", tgId)
+        .neq("status", "banned")
+        .select("telegram_user_id");
+      if (upd.error) fail("markLeft.update", upd.error);
+      if (upd.data.length > 0) return;
+      // Nenhuma linha atualizada: ou não existe (cria como left) ou está banned (o conflito não mexe nela).
+      const ins = await db
+        .from("telegram_members")
+        .upsert(
+          { telegram_user_id: tgId, status: "left", updated_at: updatedAt },
+          { onConflict: "telegram_user_id", ignoreDuplicates: true },
+        );
+      if (ins.error) fail("markLeft.insert", ins.error);
     },
 
     async countRecentHash(tgId, hash, windowSeconds) {

@@ -43,8 +43,9 @@ export interface ChatJoinRequest {
 export interface ChatMemberUpdated {
   chat: Chat;
   from: User;
-  new_chat_member: { status: string; user: User };
-  old_chat_member: { status: string };
+  // is_member só vem com status "restricted": diz se o restrito ainda está no grupo.
+  new_chat_member: { status: string; user: User; is_member?: boolean };
+  old_chat_member: { status: string; is_member?: boolean };
 }
 
 export interface Update {

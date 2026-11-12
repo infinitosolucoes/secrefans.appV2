@@ -146,27 +146,34 @@ async function handleJoinRequest(ctx: Ctx, req: ChatJoinRequest): Promise<void> 
   await ignoreApiError(ctx.api.sendMessage(req.user_chat_id, reason));
 }
 
-const OUTSIDE = new Set(["left", "kicked"]);
+const WELCOME_TTL_S = 300;
+
+/** Está dentro do grupo? "restricted" depende de is_member (restrito que saiu vem com false). */
+function isInside(m: { status: string; is_member?: boolean }): boolean {
+  if (m.status === "restricted") return m.is_member === true;
+  return m.status !== "left" && m.status !== "kicked";
+}
 
 async function handleChatMember(ctx: Ctx, upd: ChatMemberUpdated): Promise<void> {
   const user = upd.new_chat_member.user;
   if (user.is_bot) return;
-  const newStatus = upd.new_chat_member.status;
+  const groupId = ctx.config.groupId;
 
   // Só a entrada de fato (de fora para dentro): mudanças de cargo ou fim de restrição não repetem as boas-vindas.
-  if (newStatus === "member" && OUTSIDE.has(upd.old_chat_member.status)) {
+  if (upd.new_chat_member.status === "member" && !isInside(upd.old_chat_member)) {
     await ctx.repo.upsertMember(user.id, { status: "member" });
     const settings = await ctx.repo.getSettings();
     const welcome = settings.welcomeText.replaceAll("{nome}", user.first_name).trim();
-    if (welcome) await ctx.api.sendMessage(ctx.config.groupId, welcome);
+    if (welcome) {
+      const sent = await ctx.api.sendMessage(groupId, welcome);
+      // A boas-vindas some depois de um tempo para não poluir o grupo (spec 4.1.6).
+      await ctx.repo.scheduleDelete(groupId, sent.message_id, WELCOME_TTL_S);
+    }
     return;
   }
 
-  if (OUTSIDE.has(newStatus)) {
-    const member = await ctx.repo.getMember(user.id);
-    if (member?.status === "banned") return;
-    await ctx.repo.upsertMember(user.id, { status: "left" });
-  }
+  // Saída: escrita condicional no banco, para não sobrescrever um "banned" gravado em paralelo.
+  if (!isInside(upd.new_chat_member)) await ctx.repo.markLeft(user.id);
 }
 
 // Mensagens no grupo ---------------------------------------------------------------------------
@@ -217,10 +224,14 @@ async function handleModeration(ctx: Ctx, msg: Message, from: User, cmd: Moderat
       await applyBan(ctx, target.id, actor, cmd.reason);
       confirmation = `${target.first_name} foi banido do grupo.`;
       break;
-    case "unban":
+    case "unban": {
+      // Só desbane quem está banido; caso contrário, apenas some com o comando.
+      const member = await ctx.repo.getMember(target.id);
+      if (member?.status !== "banned") return deleteCommand();
       await applyUnban(ctx, target.id, actor);
       confirmation = `${target.first_name} foi desbanido e pode pedir para entrar de novo.`;
       break;
+    }
   }
 
   await deleteCommand();

@@ -51,6 +51,7 @@ function fakeRepo() {
     }),
     getMember: vi.fn<TelegramRepo["getMember"]>(async () => null),
     upsertMember: vi.fn(async () => {}),
+    markLeft: vi.fn(async () => {}),
     countRecentHash: vi.fn(async () => 0),
     logAction: vi.fn(async () => {}),
     createReport: vi.fn(async () => "rep-1"),
@@ -177,32 +178,55 @@ describe("pedido de entrada", () => {
 });
 
 describe("entrada e saída", () => {
-  const member = (user: User, oldStatus: string, newStatus: string): Update => ({
+  const member = (
+    user: User,
+    oldStatus: string,
+    newStatus: string,
+    flags: { oldIsMember?: boolean; newIsMember?: boolean } = {},
+  ): Update => ({
     update_id: nextId++,
     chat_member: {
       chat: { id: GROUP, type: "supergroup" },
       from: user,
-      old_chat_member: { status: oldStatus },
-      new_chat_member: { status: newStatus, user },
+      old_chat_member: { status: oldStatus, is_member: flags.oldIsMember },
+      new_chat_member: { status: newStatus, user, is_member: flags.newIsMember },
     },
   });
 
-  it("entrada grava membro e envia boas-vindas com o nome", async () => {
+  it("entrada grava membro, envia boas-vindas com o nome e agenda a exclusão em 300 s", async () => {
     await handleUpdate(ctx, member(FAN, "left", "member"));
     expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, { status: "member" });
     expect(api.sendMessage).toHaveBeenCalledWith(GROUP, "Bem-vindo, Ana!");
+    expect(repo.scheduleDelete).toHaveBeenCalledWith(GROUP, 900, 300);
   });
 
-  it("saída grava left", async () => {
-    repo.getMember.mockResolvedValueOnce({ status: "member", warnings: 1 });
+  it("saída usa a escrita condicional markLeft (não sobrescreve banned)", async () => {
     await handleUpdate(ctx, member(FAN, "member", "left"));
-    expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, { status: "left" });
+    expect(repo.markLeft).toHaveBeenCalledWith(FAN.id);
+    expect(repo.getMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
   });
 
-  it("saída de banido mantém banned", async () => {
-    repo.getMember.mockResolvedValueOnce({ status: "banned", warnings: 0 });
+  it("kicked (gerado pelo ban) também passa só por markLeft", async () => {
     await handleUpdate(ctx, member(FAN, "member", "kicked"));
+    expect(repo.markLeft).toHaveBeenCalledWith(FAN.id);
     expect(repo.upsertMember).not.toHaveBeenCalled();
+  });
+
+  it("restrito que sai do grupo (is_member=false) conta como saída", async () => {
+    await handleUpdate(ctx, member(FAN, "restricted", "restricted", { oldIsMember: true, newIsMember: false }));
+    expect(repo.markLeft).toHaveBeenCalledWith(FAN.id);
+  });
+
+  it("fim de restrição de quem está no grupo não repete boas-vindas", async () => {
+    await handleUpdate(ctx, member(FAN, "restricted", "member", { oldIsMember: true }));
+    expect(api.sendMessage).not.toHaveBeenCalled();
+    expect(repo.markLeft).not.toHaveBeenCalled();
+  });
+
+  it("restrito fora do grupo que volta como member recebe boas-vindas", async () => {
+    await handleUpdate(ctx, member(FAN, "restricted", "member", { oldIsMember: false }));
+    expect(api.sendMessage).toHaveBeenCalledWith(GROUP, "Bem-vindo, Ana!");
   });
 });
 
@@ -215,6 +239,10 @@ describe("comandos de moderação", () => {
     expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 500);
     expect(api.sendMessage.mock.calls[0]?.[0]).toBe(GROUP);
     expect(repo.scheduleDelete).toHaveBeenCalledWith(GROUP, 900, 30);
+    // "banned" é gravado antes do ban na Bot API (evita corrida com o update de saída).
+    expect(repo.upsertMember.mock.invocationCallOrder[0]).toBeLessThan(
+      api.banChatMember.mock.invocationCallOrder[0] ?? 0,
+    );
   });
 
   it("apaga as mensagens vencidas antes de processar", async () => {
@@ -267,10 +295,27 @@ describe("comandos de moderação", () => {
   });
 
   it("/desbanir libera e grava left", async () => {
+    repo.getMember.mockResolvedValue({ status: "banned", warnings: 0 });
     await handleUpdate(ctx, groupMsg(ADMIN, "/desbanir", { reply_to_message: replyTo(FAN) }));
     expect(api.unbanChatMember).toHaveBeenCalledWith(GROUP, FAN.id);
     expect(repo.upsertMember).toHaveBeenCalledWith(FAN.id, expect.objectContaining({ status: "left" }));
     expect(repo.logAction).toHaveBeenCalledWith("u-mod", "telegram.unban", FAN.id, "", expect.anything());
+  });
+
+  it("/desbanir em quem não está banido: só apaga o comando", async () => {
+    repo.getMember.mockResolvedValue({ status: "member", warnings: 1 });
+    await handleUpdate(ctx, groupMsg(ADMIN, "/desbanir", { reply_to_message: replyTo(FAN) }));
+    expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 500);
+    expect(api.unbanChatMember).not.toHaveBeenCalled();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+    expect(repo.logAction).not.toHaveBeenCalled();
+    expect(api.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("/desbanir sem registro de membro: só apaga o comando", async () => {
+    await handleUpdate(ctx, groupMsg(ADMIN, "/desbanir", { reply_to_message: replyTo(FAN) }));
+    expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 500);
+    expect(api.unbanChatMember).not.toHaveBeenCalled();
   });
 
   it("/advertir soma advertência com o moderador como ator", async () => {
