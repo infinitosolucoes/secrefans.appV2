@@ -90,6 +90,13 @@ describe("AsaasPaymentProvider", () => {
     expect(r).toMatchObject({ providerChargeId: "pay_1", amount: 1990, pix: { copyPaste: "000201...", qrCodeBase64: "QUJD" } });
   });
 
+  it("cliente novo entra no grupo secrefans.app", async () => {
+    const { p, calls } = provider({ "POST /customers": { id: "cus_1" } });
+    const id = await p.ensureCustomer({ name: "Fã", cpf: "52998224725", userId: "u-1" });
+    expect(id).toBe("cus_1");
+    expect(calls[0]!.body).toMatchObject({ groupName: "secrefans.app", externalReference: "u-1" });
+  });
+
   it("cartão devolve a página segura do Asaas, sem QR", async () => {
     const { p, calls } = provider({
       "POST /payments": { id: "pay_2", status: "PENDING", value: 29.9, billingType: "CREDIT_CARD", invoiceUrl: "https://x/i/2" },

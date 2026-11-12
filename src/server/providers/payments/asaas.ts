@@ -12,6 +12,12 @@ export const ASAAS_BASE_URL = {
   production: "https://api.asaas.com/v3",
 } as const;
 
+/**
+ * Grupo de clientes no Asaas: separa as cobranças da Secretfans de outras da mesma conta
+ * (o painel e GET /payments?customerGroupName=… filtram por ele).
+ */
+export const ASAAS_CUSTOMER_GROUP = "secrefans.app";
+
 export interface AsaasConfig {
   apiKey: string;
   env: keyof typeof ASAAS_BASE_URL;
@@ -138,6 +144,7 @@ export class AsaasPaymentProvider {
       email: input.email,
       cpfCnpj: input.cpf,
       externalReference: input.userId,
+      groupName: ASAAS_CUSTOMER_GROUP,
       notificationDisabled: true,
     });
     return c.id;
