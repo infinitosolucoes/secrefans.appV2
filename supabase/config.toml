@@ -422,3 +422,20 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# Homologacao (Supabase remoto secretfans-hml + Vercel)
+[remotes.hml]
+project_id = "vyhwmnwyhzjefvhxynam"
+
+[remotes.hml.auth]
+site_url = "https://secretfans-hml.vercel.app"
+additional_redirect_urls = ["https://secretfans-hml.vercel.app/auth/callback", "https://*-wellington-da-silvas-projects.vercel.app/auth/callback"]
+
+[remotes.hml.storage]
+file_size_limit = "50MiB"
+
+[remotes.hml.auth.email]
+max_frequency = "1m0s"
+
+[remotes.hml.storage.vector]
+enabled = false
