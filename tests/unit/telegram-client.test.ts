@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createBotApi, TelegramApiError } from "@/server/telegram/client";
 import { telegramConfig } from "@/server/telegram/config";
+import { safeErrorMessage } from "@/server/telegram/errors";
 
 const TOKEN = "123456789:AAFakeTokenFakeTokenFakeTokenFake12";
 
@@ -72,6 +73,27 @@ describe("createBotApi", () => {
     expect(err.status).toBe(429);
     expect(f.calls).toHaveLength(1);
     expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it("toda chamada leva um AbortSignal de timeout", async () => {
+    let signal: AbortSignal | null | undefined;
+    const impl = (async (_url: string | URL | Request, init?: RequestInit) => {
+      signal = init?.signal;
+      return new Response(JSON.stringify({ ok: true, result: true }), { status: 200 });
+    }) as typeof fetch;
+    await createBotApi(TOKEN, impl).deleteMessage(1, 2);
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal?.aborted).toBe(false);
+  });
+
+  it("timeout vira TelegramApiError status 0 com mensagem genérica", async () => {
+    const impl = (async () => {
+      throw new DOMException(`The operation timed out: https://api.telegram.org/bot${TOKEN}/x`, "TimeoutError");
+    }) as typeof fetch;
+    const err = await createBotApi(TOKEN, impl).deleteMessage(1, 2).catch((e) => e);
+    expect(err).toBeInstanceOf(TelegramApiError);
+    expect(err.status).toBe(0);
+    expect(err.message).not.toContain(TOKEN);
   });
 
   it("kickChatMember bane e depois desbane", async () => {
@@ -154,5 +176,23 @@ describe("telegramConfig", () => {
       botUsername: "secretfans_bot",
       groupId: -100123,
     });
+  });
+});
+
+describe("safeErrorMessage", () => {
+  it("TelegramApiError: usa a mensagem (sem token)", () => {
+    expect(safeErrorMessage(new TelegramApiError("banChatMember", 400, "Bad Request"))).toBe(
+      "Telegram banChatMember falhou (400): Bad Request",
+    );
+  });
+
+  it("erro do repo: usa a mensagem (operação + código)", () => {
+    expect(safeErrorMessage(new Error("telegram repo getMember: 42P01"))).toBe("telegram repo getMember: 42P01");
+  });
+
+  it("outros erros e não-erros: texto fixo", () => {
+    expect(safeErrorMessage(new Error(`fetch https://api.telegram.org/bot${TOKEN}/x`))).toBe("erro interno");
+    expect(safeErrorMessage("x")).toBe("erro interno");
+    expect(safeErrorMessage(null)).toBe("erro interno");
   });
 });

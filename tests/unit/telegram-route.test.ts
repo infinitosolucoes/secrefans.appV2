@@ -80,6 +80,18 @@ describe("POST /api/webhooks/telegram", () => {
     expect(errorSpy).toHaveBeenCalled();
   });
 
+  it("log do erro: mensagem do repo passa, qualquer outra vira texto fixo", async () => {
+    markUpdateSeen.mockRejectedValueOnce(new Error("telegram repo markUpdateSeen: 42P01"));
+    await POST(req(update));
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain("telegram repo markUpdateSeen: 42P01");
+
+    handleUpdate.mockRejectedValueOnce(new Error("linha do banco com dado pessoal"));
+    await POST(req(update));
+    const logged = String(errorSpy.mock.calls[1]?.[0]);
+    expect(logged).toContain("erro interno");
+    expect(logged).not.toContain("dado pessoal");
+  });
+
   it("corpo que não é JSON -> 200 sem handler", async () => {
     expect((await POST(req("não é json"))).status).toBe(200);
     expect(handleUpdate).not.toHaveBeenCalled();

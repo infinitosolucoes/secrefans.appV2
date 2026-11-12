@@ -28,6 +28,9 @@ export interface BotApi {
   getChatAdministratorIds(chatId: number): Promise<number[]>;
 }
 
+/** Tempo máximo de uma chamada à Bot API (a função serverless tem orçamento curto). */
+const REQUEST_TIMEOUT_MS = 8000;
+
 /** Maior espera aceita num 429 antes de desistir (a função serverless não pode ficar parada). */
 const MAX_RETRY_WAIT_S = 2;
 
@@ -68,10 +71,11 @@ export function createBotApi(
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(params),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
       json = await res.json();
     } catch {
-      // Erro de rede/JSON: não propaga o erro original, pois pode conter a URL com o token.
+      // Erro de rede/JSON/timeout: não propaga o erro original, pois pode conter a URL com o token.
       throw new TelegramApiError(method, 0, "falha de rede ou resposta inválida");
     }
     if (json.ok) return json.result as T;

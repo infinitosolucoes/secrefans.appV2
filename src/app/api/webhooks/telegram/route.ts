@@ -1,7 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
-import { createBotApi, TelegramApiError } from "@/server/telegram/client";
+import { createBotApi } from "@/server/telegram/client";
+import { safeErrorMessage } from "@/server/telegram/errors";
 import { telegramConfig } from "@/server/telegram/config";
 import { handleUpdate } from "@/server/telegram/handler";
 import { createTelegramRepo } from "@/server/telegram/repo";
@@ -13,10 +14,9 @@ const sha = (s: string) => createHash("sha256").update(s).digest();
 
 const ok = () => NextResponse.json({ ok: true });
 
-/** Log sem vazar o token: só nome/mensagem de erro da Bot API ou texto genérico. */
+/** Log sem vazar o token nem dados: só mensagens da Bot API ou do repo, senão texto fixo. */
 function logFailure(stage: string, err: unknown): void {
-  const detail = err instanceof TelegramApiError ? `${err.name}: ${err.message}` : "erro interno";
-  console.error(`[telegram-webhook] falha em ${stage}: ${detail}`);
+  console.error(`[telegram-webhook] falha em ${stage}: ${safeErrorMessage(err)}`);
 }
 
 /**

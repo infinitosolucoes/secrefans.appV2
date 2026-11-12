@@ -20,7 +20,10 @@ export function TelegramSettingsForm({ initial }: { initial: TelegramSettingsVal
     <form action={action} className="flex flex-col gap-4">
       {state && <Alert tone={state.ok ? "success" : "error"}>{state.message}</Alert>}
       <div>
-        <Label htmlFor="tg-rules" hint="resposta do /regras">
+        <Label
+          htmlFor="tg-rules"
+          hint="enviadas no privado junto com o link de entrada, ao vincular pelo /start"
+        >
           Regras do grupo
         </Label>
         <Textarea

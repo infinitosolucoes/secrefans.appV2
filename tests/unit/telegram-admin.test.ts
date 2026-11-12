@@ -149,13 +149,19 @@ describe("decideReportAction com ação no Telegram", () => {
   });
 
   it("falha no Telegram: ok false e RPC não chamado", async () => {
-    banTelegramUser.mockRejectedValueOnce(new Error("api"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    banTelegramUser.mockRejectedValueOnce(new Error("api com dado sensível"));
     const r = await decideReportAction(null, form({ telegramAction: "ban" }));
     expect(r).toEqual({
       ok: false,
       message: "Não foi possível executar a ação no Telegram. A denúncia continua aberta.",
     });
     expect(rpc).not.toHaveBeenCalled();
+    // Falha registrada no log sem a mensagem original (que pode ter dados).
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain("erro interno");
+    expect(String(errorSpy.mock.calls[0]?.[0])).not.toContain("sensível");
+    errorSpy.mockRestore();
   });
 
   it("arquivar + ban: nenhuma ação no Telegram", async () => {

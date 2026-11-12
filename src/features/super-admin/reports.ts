@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaffMfa } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
+import { safeErrorMessage } from "@/server/telegram/errors";
 import { banTelegramUser, deleteGroupMessage, muteTelegramUser } from "@/server/telegram/group";
 import type { AdminResult } from "./actions";
 
@@ -89,7 +90,8 @@ export async function decideReportAction(
         user.id,
         parsed.data.reason,
       );
-    } catch {
+    } catch (err) {
+      console.error(`[telegram-reports] falha na ação ${telegramAction}: ${safeErrorMessage(err)}`);
       return { ok: false, message: TELEGRAM_FAIL };
     }
   }

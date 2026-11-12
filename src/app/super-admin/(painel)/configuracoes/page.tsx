@@ -33,7 +33,7 @@ export default async function Page() {
       <PageHeader
         eyebrow="Plataforma"
         title="Configurações"
-        description="Somente leitura nesta versão. Edição com aprovação e auditoria chega com as regras de comissão (S4)."
+        description="Parâmetros e feature flags são somente leitura nesta tela. As configurações do bot do Telegram podem ser editadas por super_admin."
       />
       {(settings.error || flags.error) && (
         <Alert tone="error">Não foi possível carregar as configurações.</Alert>
