@@ -669,6 +669,118 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"telegram_link_codes": {
+                  Row: {
+                    "code": string,"expires_at": string,"used_at": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"expires_at"?: string,"used_at"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "code"?: string,"expires_at"?: string,"used_at"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"telegram_links": {
+                  Row: {
+                    "linked_at": string,"telegram_user_id": number,"telegram_username": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "linked_at"?: string,"telegram_user_id": number,"telegram_username"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "linked_at"?: string,"telegram_user_id"?: number,"telegram_username"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"telegram_members": {
+                  Row: {
+                    "last_action_by": string | null,"muted_until": string | null,"status": string,"telegram_user_id": number,"updated_at": string,"warnings": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "last_action_by"?: string | null,"muted_until"?: string | null,"status"?: string,"telegram_user_id": number,"updated_at"?: string,"warnings"?: number
+                  }
+                  Update: {
+                    "last_action_by"?: string | null,"muted_until"?: string | null,"status"?: string,"telegram_user_id"?: number,"updated_at"?: string,"warnings"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"telegram_pending_deletes": {
+                  Row: {
+                    "chat_id": number,"delete_after": string,"message_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "chat_id": number,"delete_after": string,"message_id": number
+                  }
+                  Update: {
+                    "chat_id"?: number,"delete_after"?: string,"message_id"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"telegram_recent_messages": {
+                  Row: {
+                    "id": number,"sent_at": string,"telegram_user_id": number,"text_hash": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: never,"sent_at"?: string,"telegram_user_id": number,"text_hash": string
+                  }
+                  Update: {
+                    "id"?: never,"sent_at"?: string,"telegram_user_id"?: number,"text_hash"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"telegram_reported_messages": {
+                  Row: {
+                    "author_telegram_user_id": number,"author_user_id": string | null,"chat_id": number,"created_at": string,"has_media": boolean,"id": string,"message_id": number,"text": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_telegram_user_id": number,"author_user_id"?: string | null,"chat_id": number,"created_at"?: string,"has_media"?: boolean,"id"?: string,"message_id": number,"text"?: string
+                  }
+                  Update: {
+                    "author_telegram_user_id"?: number,"author_user_id"?: string | null,"chat_id"?: number,"created_at"?: string,"has_media"?: boolean,"id"?: string,"message_id"?: number,"text"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"telegram_settings": {
+                  Row: {
+                    "allowed_domains": (string)[],"auto_mute_hours": number,"flood_repeat_limit": number,"flood_window_seconds": number,"id": boolean,"rules_text": string,"updated_at": string,"updated_by": string | null,"warn_limit": number,"welcome_text": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "allowed_domains"?: (string)[],"auto_mute_hours"?: number,"flood_repeat_limit"?: number,"flood_window_seconds"?: number,"id"?: boolean,"rules_text"?: string,"updated_at"?: string,"updated_by"?: string | null,"warn_limit"?: number,"welcome_text"?: string
+                  }
+                  Update: {
+                    "allowed_domains"?: (string)[],"auto_mute_hours"?: number,"flood_repeat_limit"?: number,"flood_window_seconds"?: number,"id"?: boolean,"rules_text"?: string,"updated_at"?: string,"updated_by"?: string | null,"warn_limit"?: number,"welcome_text"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"telegram_updates_seen": {
+                  Row: {
+                    "seen_at": string,"update_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "seen_at"?: string,"update_id": number
+                  }
+                  Update: {
+                    "seen_at"?: string,"update_id"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"user_blocks": {
                   Row: {
                     "blocked_id": string,"blocker_id": string,"created_at": string
@@ -930,10 +1042,27 @@ isOneToOne: false
                            },
 "submit_creator_verification":
 { Args: { "p_birth_date": string,"p_depicted_consent": boolean,"p_document_back_path": string,"p_document_front_path": string,"p_legal_name": string,"p_rights_consent": boolean,"p_selfie_path": string }; Returns: string
+                           },
+"telegram_consume_link_code":
+{ Args: { "p_code": string,"p_telegram_user_id": number,"p_username": string }; Returns: string
+                           },
+"telegram_create_link_code":
+{ Args: { "p_user": string }; Returns: string
+                           },
+"telegram_create_report":
+{ Args: { "p_author_tg": number,"p_chat_id": number,"p_details": string,"p_has_media": boolean,"p_message_id": number,"p_reason": string,"p_reporter": string,"p_text": string }; Returns: string
+                           },
+"telegram_log_action":
+{ Args: { "p_action": string,"p_actor": string,"p_metadata": Json,"p_reason": string,"p_target": string }; Returns: undefined
+                           },
+"telegram_user_for":
+{ Args: { "p_telegram_user_id": number }; Returns: {
+              "can_moderate": boolean,"status": Database["public"]['Enums']["account_status"],"user_id": string
+            }[]
                            }
           }
           Enums: {
-            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","commission_rule_status": "pending_approval"|"approved"|"rejected","order_kind": "subscription"|"ppv"|"package"|"tip"|"message","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded"|"chargeback","package_audience": "all"|"subscribers","package_status": "draft"|"published"|"archived"|"removed","package_version_status": "draft"|"published"|"superseded","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile"|"message","subscription_status": "active"|"canceled"|"expired","verification_status": "pending"|"approved"|"rejected"|"suspended"
+            "account_status": "active"|"blocked"|"deleted","app_role": "fan"|"creator"|"moderator"|"support"|"finance"|"admin_ops"|"super_admin","comment_status": "visible"|"removed","commission_rule_status": "pending_approval"|"approved"|"rejected","order_kind": "subscription"|"ppv"|"package"|"tip"|"message","order_status": "pending"|"paid"|"failed"|"cancelled"|"refunded"|"chargeback","package_audience": "all"|"subscribers","package_status": "draft"|"published"|"archived"|"removed","package_version_status": "draft"|"published"|"superseded","post_status": "draft"|"published"|"removed","post_visibility": "free"|"subscribers"|"ppv","profile_visibility": "public"|"followers"|"private","report_status": "open"|"resolved"|"dismissed","report_target": "post"|"comment"|"profile"|"message"|"telegram_message","subscription_status": "active"|"canceled"|"expired","verification_status": "pending"|"approved"|"rejected"|"suspended"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1053,7 +1182,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"commission_rule_status": ["pending_approval", "approved", "rejected"],"order_kind": ["subscription", "ppv", "package", "tip", "message"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded", "chargeback"],"package_audience": ["all", "subscribers"],"package_status": ["draft", "published", "archived", "removed"],"package_version_status": ["draft", "published", "superseded"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile", "message"],"subscription_status": ["active", "canceled", "expired"],"verification_status": ["pending", "approved", "rejected", "suspended"]
+            "account_status": ["active", "blocked", "deleted"],"app_role": ["fan", "creator", "moderator", "support", "finance", "admin_ops", "super_admin"],"comment_status": ["visible", "removed"],"commission_rule_status": ["pending_approval", "approved", "rejected"],"order_kind": ["subscription", "ppv", "package", "tip", "message"],"order_status": ["pending", "paid", "failed", "cancelled", "refunded", "chargeback"],"package_audience": ["all", "subscribers"],"package_status": ["draft", "published", "archived", "removed"],"package_version_status": ["draft", "published", "superseded"],"post_status": ["draft", "published", "removed"],"post_visibility": ["free", "subscribers", "ppv"],"profile_visibility": ["public", "followers", "private"],"report_status": ["open", "resolved", "dismissed"],"report_target": ["post", "comment", "profile", "message", "telegram_message"],"subscription_status": ["active", "canceled", "expired"],"verification_status": ["pending", "approved", "rejected", "suspended"]
           }
         }
 } as const

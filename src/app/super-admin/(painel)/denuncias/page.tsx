@@ -22,6 +22,7 @@ const TARGET_LABEL = {
   comment: "Comentário",
   profile: "Perfil",
   message: "Mensagem",
+  telegram_message: "Mensagem do Telegram",
 } as const;
 const URGENT = new Set(["nao_consensual", "menor_de_idade", "violencia"]);
 
