@@ -124,6 +124,39 @@ describe("removeUserFromGroup", () => {
   });
 });
 
+describe("bloqueio sobre ban de moderação", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    telegramConfig.mockReturnValue(cfg);
+    api = fakeApi();
+  });
+
+  it("banido pelo moderador -> conta bloqueada -> reativada: continua banido, sem unban", async () => {
+    // Estado e auditoria simulados: o /banir do moderador já gravou banned e um telegram.ban sem causa.
+    let status: "member" | "banned" | "left" = "banned";
+    const bans: (string | null)[] = [null];
+    repo = fakeRepo({
+      getMember: vi.fn(async () => ({ status, warnings: 0, mutedUntil: null })),
+      upsertMember: vi.fn(async (_tg: number, patch: { status?: typeof status }) => {
+        if (patch.status) status = patch.status;
+      }),
+      logAction: vi.fn(async (_a, action, _t, _r, meta?: Record<string, unknown>) => {
+        if (action === "telegram.ban") bans.push(typeof meta?.cause === "string" ? meta.cause : null);
+      }),
+      lastBanCause: vi.fn(async () => bans[bans.length - 1] ?? null),
+    });
+
+    await removeUserFromGroup(USER, "conta bloqueada", ADMIN, { ban: true, cause: "account_blocked" });
+    expect(api.banChatMember).not.toHaveBeenCalled();
+    expect(repo.logAction).not.toHaveBeenCalled();
+    expect(repo.upsertMember).not.toHaveBeenCalled();
+
+    await restoreUserAfterReactivation(USER, ADMIN);
+    expect(api.unbanChatMember).not.toHaveBeenCalled();
+    expect(status).toBe("banned");
+  });
+});
+
 describe("restoreUserAfterReactivation", () => {
   const banned = { status: "banned" as const, warnings: 0, mutedUntil: null };
 

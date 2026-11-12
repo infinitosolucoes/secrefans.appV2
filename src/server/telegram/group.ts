@@ -26,8 +26,9 @@ function defaultDeps(): GroupDeps | null {
 
 /**
  * Tira do grupo a conta do site vinculada a `userId`. Sem vínculo ou com o bot desligado não faz
- * nada. `ban` bane de vez (status banned); senão expulsa sem banir (status left). Erros da Bot API
- * propagam para quem chamou decidir.
+ * nada; membro já banido também não (nem nova chamada à Bot API, nem nova auditoria). `ban` bane
+ * de vez (status banned); senão expulsa sem banir (status left). Erros da Bot API propagam para quem
+ * chamou decidir.
  */
 export async function removeUserFromGroup(
   userId: string,
@@ -42,6 +43,12 @@ export async function removeUserFromGroup(
   const tgId = await repo.telegramIdForUser(userId);
   if (tgId === null) return;
 
+  // Já banido (ex.: /banir ou decisão de denúncia): não faz nada. No ban, um novo telegram.ban com
+  // cause account_blocked faria a reativação da conta desfazer o ban de moderação; o bloqueio em si
+  // já fica na auditoria do set_account_status. No kick, expulsar (banir e desbanir) o desbaniria.
+  const member = await repo.getMember(tgId);
+  if (member?.status === "banned") return;
+
   if (opts?.ban) {
     await api.banChatMember(groupId, tgId);
     await repo.upsertMember(tgId, { status: "banned", lastActionBy: actor });
@@ -49,9 +56,6 @@ export async function removeUserFromGroup(
     return;
   }
 
-  // Expulsar = banir e desbanir; num membro já banido isso o desbaniria.
-  const member = await repo.getMember(tgId);
-  if (member?.status === "banned") return;
   await api.kickChatMember(groupId, tgId);
   await repo.upsertMember(tgId, { status: "left", lastActionBy: actor });
   await repo.logAction(actor, "telegram.kick", tgId, reason);
