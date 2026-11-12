@@ -7,7 +7,7 @@ import { requireRole } from "@/server/auth/session";
 import { activeProviderName } from "@/server/providers/payments";
 import { formatBRL } from "@/features/content/constants";
 import { getCreatorBalanceCents, getPayoutAccount } from "@/features/commerce/queries";
-import { PayoutAccountForm } from "@/features/commerce/PayoutAccountForm";
+import { LinkWalletForm, PayoutAccountForm } from "@/features/commerce/PayoutAccountForm";
 import { StudioTabs } from "@/features/commerce/StudioTabs";
 
 export const metadata: Metadata = { title: "Recebimentos · Studio" };
@@ -80,7 +80,22 @@ export default async function Page() {
                 Cadastre sua conta para receber cada venda direto, por split. Sem ela, as vendas
                 continuam e o valor fica no seu saldo até o cadastro.
               </p>
-              <PayoutAccountForm />
+              <details className="group rounded-md border border-border p-4" open>
+                <summary className="cursor-pointer type-label font-semibold text-ink">
+                  Já tenho conta no Asaas
+                </summary>
+                <div className="mt-4">
+                  <LinkWalletForm />
+                </div>
+              </details>
+              <details className="group rounded-md border border-border p-4">
+                <summary className="cursor-pointer type-label font-semibold text-ink">
+                  Abrir uma conta Asaas pela Secretfans
+                </summary>
+                <div className="mt-4">
+                  <PayoutAccountForm />
+                </div>
+              </details>
             </>
           )}
         </section>

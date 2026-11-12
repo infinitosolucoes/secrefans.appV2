@@ -54,6 +54,55 @@ const schema = z
     }
   });
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Vincula uma conta Asaas que o criador JÁ tem: o split vai direto para a carteira (walletId).
+ * Funciona com qualquer conta Asaas (não precisa ser subconta da plataforma).
+ */
+export async function linkExistingWalletAction(
+  _: PayoutResult | null,
+  fd: FormData,
+): Promise<PayoutResult> {
+  const user = await requireRole(["creator"], "/estudio/recebimentos");
+  const walletId = String(fd.get("walletId") ?? "").trim().toLowerCase();
+  const document = onlyDigits(fd.get("document"));
+  if (!UUID.test(walletId))
+    return { ok: false, message: "O Wallet ID tem o formato 00000000-0000-0000-0000-000000000000." };
+  if (!isValidCpf(document) && !isValidCnpj(document))
+    return { ok: false, message: "Informe o CPF ou CNPJ titular da conta Asaas." };
+  if (fd.get("confirm") !== "on")
+    return { ok: false, message: "Confirme que a conta Asaas é sua." };
+
+  // A carteira da própria plataforma não pode ser destino do split.
+  try {
+    if ((await getAsaasProvider().listOwnWalletIds()).includes(walletId))
+      return { ok: false, message: "Este Wallet ID é da conta da plataforma, não da sua." };
+  } catch {
+    return { ok: false, message: "Não foi possível falar com o Asaas agora." };
+  }
+
+  const db = createServiceSupabase();
+  const { error } = await db.rpc("register_payout_account", {
+    p_creator_id: user.id,
+    p_provider: "asaas",
+    p_account_id: "conta-propria",
+    p_wallet_id: walletId,
+    p_status: "approved",
+    p_document_last4: last4(document),
+  });
+  if (error)
+    return {
+      ok: false,
+      message:
+        error.code === "23505"
+          ? "Este Wallet ID já está vinculado a outro criador."
+          : "Não foi possível vincular agora.",
+    };
+  revalidatePath("/estudio", "layout");
+  return { ok: true, message: "Conta Asaas vinculada. Suas próximas vendas caem direto nela." };
+}
+
 /** Cria a subconta Asaas do criador (destino do split das vendas). */
 export async function registerPayoutAccountAction(
   _: PayoutResult | null,

@@ -269,6 +269,12 @@ export class AsaasPaymentProvider {
     };
   }
 
+  /** Carteiras da própria conta da plataforma (nunca podem ser destino de split). */
+  async listOwnWalletIds(): Promise<string[]> {
+    const r = await this.request<{ data: Array<{ id: string }> }>("GET", "/wallets");
+    return (r.data ?? []).map((w) => w.id.toLowerCase());
+  }
+
   /** Confere o token do webhook (comparação em tempo constante). */
   checkWebhookToken(headers: Headers): boolean {
     const expected = this.cfg.webhookToken;

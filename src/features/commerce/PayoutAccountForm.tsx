@@ -1,9 +1,40 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Alert, Button, Field, SelectField } from "@/components/ui";
+import { Alert, Button, Checkbox, Field, SelectField } from "@/components/ui";
 import { onlyDigits } from "@/lib/cpf";
-import { registerPayoutAccountAction } from "./payout-actions";
+import { linkExistingWalletAction, registerPayoutAccountAction } from "./payout-actions";
+
+/** Criador que já tem conta Asaas: vincula a carteira (walletId) como destino do split. */
+export function LinkWalletForm() {
+  const [state, action, pending] = useActionState(linkExistingWalletAction, null);
+  if (state?.ok) return <Alert tone="success">{state.message}</Alert>;
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      {state && <Alert tone="error">{state.message}</Alert>}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          name="walletId"
+          label="Wallet ID da sua conta Asaas"
+          placeholder="00000000-0000-0000-0000-000000000000"
+          autoComplete="off"
+          required
+        />
+        <Field name="document" label="CPF ou CNPJ titular" inputMode="numeric" required />
+      </div>
+      <p className="type-caption text-ink-muted">
+        No Asaas: Menu do usuário → Integrações → Chave de API → Wallet ID (ou Minha conta →
+        Dados comerciais). Nunca envie sua chave de API, só o Wallet ID.
+      </p>
+      <Checkbox name="confirm" required>
+        Confirmo que esta conta Asaas é minha e autorizo receber nela a minha parte das vendas.
+      </Checkbox>
+      <Button type="submit" loading={pending} variant="secondary" className="self-start">
+        Vincular minha conta Asaas
+      </Button>
+    </form>
+  );
+}
 
 export function PayoutAccountForm() {
   const [state, action, pending] = useActionState(registerPayoutAccountAction, null);
