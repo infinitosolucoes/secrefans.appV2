@@ -353,3 +353,28 @@
 - [ ] **Step 3:** `npx tsx scripts/telegram-setup.ts` sem variáveis → código 1 e a lista de faltantes.
 - [ ] **Step 4: Verificação final:** `npm run typecheck && npm run lint && npm test && npm run db:test` → tudo verde.
 - [ ] **Step 5: Commit** `docs(telegram): runbook e script de setup do webhook`.
+
+---
+
+## Pendências conhecidas (após a execução)
+
+Apontadas nas revisões e deixadas para depois (as já corrigidas na rodada final foram removidas):
+
+**Com prazo**
+- Varredura diária lê no máximo 500 membros, sem rotação — paginar antes de o grupo chegar a ~500 membros.
+- `ensureMember` não reativa linha `left` de quem fala no grupo; um `restrictChatMember` que falha na volta deixa a linha `left` (fora da varredura).
+- Usuário de serviço 777000 (encaminhamento automático de canal vinculado) ganha linha e a varredura tenta removê-lo todo dia.
+
+**Sem prazo**
+- Notificação `report_urgent` só no site (sem e-mail) e com o slug do motivo no corpo.
+- Entrega at-most-once: update marcado como visto antes do handler; falha transitória perde o update (decisão da spec).
+- Advertência é ler-modificar-gravar (rajada paralela pode contar a menos).
+- Antispam: link não parseável passa; `t.me/` dentro de URL de domínio permitido é falso positivo; alias "consensual" sozinho; entrada NFD corta `details`.
+- Cache de admins de 60 s sem invalidação; `42501` de permissão real aparece como "conta não ativa".
+- `hasMedia` ignora animation/audio/voice/video_note/sticker.
+- Apagar mensagem que já sumiu falha (use "Nenhuma" para fechar a denúncia).
+- Autor com conta mas sem handle aparece como "(sem conta vinculada)"; alteração de configuração do bot sem entrada na auditoria.
+- Log repetido de variável TELEGRAM_* inválida; varredura não usa `safeErrorMessage`.
+- Cada `/start` cria um link de convite novo.
+- Testes faltando: pgTAP de código expirado/conta bloqueada; fetch rejeitado; actions/card/cron; teste 15 do pgTAP conta todas as linhas (frágil a dados residuais).
+- Runbook: dizer que `chat_member` só chega com bot admin e que `drop_pending_updates` descarta a fila a cada execução do script.
