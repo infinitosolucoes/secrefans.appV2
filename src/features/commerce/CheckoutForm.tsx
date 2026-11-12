@@ -12,10 +12,12 @@ export function CheckoutForm({
   slug,
   id,
   priceCents,
+  needsCpf = false,
 }: {
   slug: CheckoutSlug;
   id: string;
   priceCents: number | null;
+  needsCpf?: boolean;
 }) {
   const [state, action, pending] = useActionState(startCheckoutAction, null);
   const idempotencyKey = useMemo(() => crypto.randomUUID(), []);
@@ -108,6 +110,26 @@ export function CheckoutForm({
           </p>
         )}
       </fieldset>
+
+      {needsCpf && (
+        <div className="max-w-xs">
+          <Label htmlFor="cpf" hint="exigido pelo provedor de pagamentos">
+            CPF
+          </Label>
+          <Input
+            id="cpf"
+            name="cpf"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="000.000.000-00"
+            maxLength={14}
+            required
+          />
+          <p className="mt-1 type-caption text-ink-muted">
+            Enviado só ao provedor; a Secretfans guarda apenas os 4 últimos dígitos.
+          </p>
+        </div>
+      )}
 
       <Checkbox name="accept" required>
         Li e aceito a política de compras e reembolso. Em caso de estorno ou chargeback, o acesso ao

@@ -8,7 +8,9 @@ import { requireUser } from "@/server/auth/session";
 import { formatBRL, UUID_RE } from "@/features/content/constants";
 import { CheckoutForm } from "@/features/commerce/CheckoutForm";
 import { CHECKOUT_KINDS, type CheckoutSlug } from "@/features/commerce/constants";
-import { getCheckoutItem } from "@/features/commerce/queries";
+import { getCheckoutItem, hasPaymentCustomer } from "@/features/commerce/queries";
+import { serverEnv } from "@/lib/env.server";
+import { activeProviderName } from "@/server/providers/payments";
 
 export const metadata: Metadata = { title: "Finalizar compra", robots: { index: false } };
 
@@ -25,6 +27,8 @@ export default async function Page({
   const slug = tipo as CheckoutSlug;
   const item = await getCheckoutItem(slug, id, user.id);
   if (!item) notFound();
+  const provider = activeProviderName();
+  const needsCpf = provider === "asaas" && !(await hasPaymentCustomer(user.id, provider));
 
   return (
     <AppShell user={user}>
@@ -46,14 +50,28 @@ export default async function Page({
             </Alert>
           ) : (
             <section className="rounded-lg border border-border bg-surface-alt p-5 md:p-6">
-              <CheckoutForm slug={slug} id={id} priceCents={item.priceCents} />
+              <CheckoutForm
+                slug={slug}
+                id={id}
+                priceCents={item.priceCents}
+                needsCpf={needsCpf}
+              />
             </section>
           )}
-          <p className="mt-4 flex gap-2 rounded-md border border-warning bg-surface-alt p-4 type-caption text-ink-muted">
-            <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden />
-            Ambiente de testes: os pagamentos desta etapa são simulados. Nenhum valor real é
-            cobrado.
-          </p>
+          {provider === "simulado" ? (
+            <p className="mt-4 flex gap-2 rounded-md border border-warning bg-surface-alt p-4 type-caption text-ink-muted">
+              <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden />
+              Ambiente de testes: os pagamentos desta etapa são simulados. Nenhum valor real é
+              cobrado.
+            </p>
+          ) : (
+            serverEnv().ASAAS_ENV === "sandbox" && (
+              <p className="mt-4 flex gap-2 rounded-md border border-warning bg-surface-alt p-4 type-caption text-ink-muted">
+                <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden />
+                Ambiente de homologação: cobranças no sandbox do Asaas. Nenhum valor real é cobrado.
+              </p>
+            )
+          )}
         </div>
         <aside className="w-full rounded-lg border border-accent bg-surface-alt p-5 shadow-glow-sm md:p-6 lg:w-96">
           <p className="type-tagline text-ink-muted">Resumo do pedido</p>

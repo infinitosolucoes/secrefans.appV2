@@ -1,6 +1,9 @@
 -- Dados sintéticos SOMENTE para desenvolvimento local (supabase db reset).
 -- Credenciais documentadas em supabase/README.md. Nunca rodar em HML/PROD.
 
+-- Marca o banco como local: libera a limpeza do ledger imutável nos testes (E2E/pgTAP).
+insert into private.environment_markers (key) values ('local_test_db') on conflict do nothing;
+
 do $$
 declare
   pw text := extensions.crypt('Secret-Teste-2026', extensions.gen_salt('bf'));

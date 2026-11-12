@@ -1,6 +1,7 @@
 import "server-only";
 import { serverEnv } from "@/lib/env.server";
 import { createServiceSupabase } from "@/server/auth/supabase";
+import { AsaasPaymentProvider } from "./asaas";
 import type { VerifiedProviderEvent } from "./PaymentProvider";
 import { isSimulatedAllowed } from "./policy";
 import { SimulatedPaymentProvider } from "./simulated";
@@ -19,10 +20,8 @@ export function simulatedPaymentsAllowed(): boolean {
   });
 }
 
-export function getPaymentProvider(): SimulatedPaymentProvider {
+export function getSimulatedProvider(): SimulatedPaymentProvider {
   const env = serverEnv();
-  if (env.PAYMENT_PROVIDER === "asaas")
-    throw new Error("Provedor Asaas ainda não configurado (S5, depende de aprovação formal).");
   if (!simulatedPaymentsAllowed())
     throw new Error("Pagamentos simulados não são permitidos neste ambiente.");
   // Fora do desenvolvimento local, o segredo de desenvolvimento (público no código) não vale.
@@ -31,17 +30,45 @@ export function getPaymentProvider(): SimulatedPaymentProvider {
   return new SimulatedPaymentProvider(env.SIMULATED_WEBHOOK_SECRET ?? DEV_SECRET);
 }
 
+export function getAsaasProvider(): AsaasPaymentProvider {
+  const env = serverEnv();
+  if (!env.ASAAS_API_KEY) throw new Error("ASAAS_API_KEY não configurada.");
+  return new AsaasPaymentProvider({
+    apiKey: env.ASAAS_API_KEY,
+    env: env.ASAAS_ENV,
+    webhookToken: env.ASAAS_WEBHOOK_TOKEN,
+  });
+}
+
+/** Provedor ativo do ambiente (PAYMENT_PROVIDER). */
+export function getPaymentProvider(): SimulatedPaymentProvider | AsaasPaymentProvider {
+  return serverEnv().PAYMENT_PROVIDER === "asaas" ? getAsaasProvider() : getSimulatedProvider();
+}
+
+export const activeProviderName = () => serverEnv().PAYMENT_PROVIDER;
+
 /**
- * Aplica um evento de pagamento JÁ VERIFICADO (assinatura conferida) no banco.
- * Único caminho que libera acesso; o banco garante idempotência por (provedor, evento).
+ * Aplica um evento de pagamento JÁ VERIFICADO no banco. Único caminho que libera acesso;
+ * o banco garante idempotência por (provedor, evento) e lança no ledger na mesma transação.
+ * Mensalidades geradas pelo provedor viram um pedido de renovação antes da confirmação.
  */
 export async function applyPaymentEvent(event: VerifiedProviderEvent): Promise<string> {
-  const { data, error } = await createServiceSupabase().rpc("confirm_payment", {
+  const db = createServiceSupabase();
+  if (event.subscriptionId) {
+    const { error } = await db.rpc("create_renewal_order", {
+      p_provider: event.provider,
+      p_provider_ref: event.chargeId,
+      p_provider_subscription_id: event.subscriptionId,
+    });
+    if (error) throw new Error(`create_renewal_order: ${error.code ?? "erro"}`);
+  }
+  const { data, error } = await db.rpc("confirm_payment", {
     p_provider: event.provider,
     p_event_id: event.eventId,
     p_provider_ref: event.chargeId,
     p_status: event.status,
     p_payload: event.payload as never,
+    ...(event.netCents != null ? { p_net_cents: event.netCents } : {}),
   });
   if (error) throw new Error(`confirm_payment: ${error.code ?? "erro"}`);
   return data ?? "ignored";

@@ -16,6 +16,8 @@ begin
 end; $$;
 
 -- Estado limpo (desfeito no rollback) ----------------------------------------------
+delete from public.ledger_lines;
+delete from public.ledger_entries;
 delete from public.entitlements;
 delete from public.subscriptions;
 delete from public.payment_events;

@@ -85,6 +85,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"creator_payout_accounts": {
+                  Row: {
+                    "created_at": string,"creator_id": string,"document_last4": string,"provider": string,"provider_account_id": string,"status": string,"updated_at": string,"wallet_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"creator_id": string,"document_last4": string,"provider": string,"provider_account_id": string,"status"?: string,"updated_at"?: string,"wallet_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"creator_id"?: string,"document_last4"?: string,"provider"?: string,"provider_account_id"?: string,"status"?: string,"updated_at"?: string,"wallet_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"creator_verifications": {
                   Row: {
                     "appeal_text": string | null,"appealed_at": string | null,"birth_date": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"decision_reason": string | null,"document_back_path": string | null,"document_front_path": string,"id": string,"legal_name": string,"selfie_path": string,"status": Database["public"]['Enums']["verification_status"],"submitted_at": string,"updated_at": string,"user_id": string
@@ -147,16 +161,82 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
-                },"orders": {
+                },"ledger_accounts": {
                   Row: {
-                    "buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at": string,"creator_id": string,"creator_net_cents": number,"description": string,"external_fees_cents": number,"gross_cents": number,"id": string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at": string | null,"provider": string | null,"provider_ref": string | null,"status": Database["public"]['Enums']["order_status"],"target_id": string,"updated_at": string
+                    "code": string,"created_at": string,"kind": string,"owner_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at"?: string,"creator_id": string,"creator_net_cents": number,"description"?: string,"external_fees_cents"?: number,"gross_cents": number,"id"?: string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id": string,"updated_at"?: string
+                    "code": string,"created_at"?: string,"kind": string,"owner_id"?: string | null
                   }
                   Update: {
-                    "buyer_id"?: string,"commission_bps"?: number,"commission_cents"?: number,"commission_rule_id"?: string,"commission_rule_version"?: number,"created_at"?: string,"creator_id"?: string,"creator_net_cents"?: number,"description"?: string,"external_fees_cents"?: number,"gross_cents"?: number,"id"?: string,"idempotency_key"?: string,"kind"?: Database["public"]['Enums']["order_kind"],"method"?: string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id"?: string,"updated_at"?: string
+                    "code"?: string,"created_at"?: string,"kind"?: string,"owner_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"ledger_entries": {
+                  Row: {
+                    "created_at": string,"id": number,"kind": string,"memo": string,"order_id": string,"payment_event_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: never,"kind": string,"memo"?: string,"order_id": string,"payment_event_id"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: never,"kind"?: string,"memo"?: string,"order_id"?: string,"payment_event_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ledger_entries_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ledger_entries_payment_event_id_fkey"
+      columns: ["payment_event_id"]
+isOneToOne: false
+      referencedRelation: "payment_events"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ledger_lines": {
+                  Row: {
+                    "account_code": string,"credit_cents": number,"debit_cents": number,"entry_id": number,"id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_code": string,"credit_cents"?: number,"debit_cents"?: number,"entry_id": number,"id"?: never
+                  }
+                  Update: {
+                    "account_code"?: string,"credit_cents"?: number,"debit_cents"?: number,"entry_id"?: number,"id"?: never
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ledger_lines_account_code_fkey"
+      columns: ["account_code"]
+isOneToOne: false
+      referencedRelation: "ledger_accounts"
+      referencedColumns: ["code"]
+    },{
+      foreignKeyName: "ledger_lines_entry_id_fkey"
+      columns: ["entry_id"]
+isOneToOne: false
+      referencedRelation: "ledger_entries"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"orders": {
+                  Row: {
+                    "actual_fee_cents": number | null,"buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at": string,"creator_id": string,"creator_net_cents": number,"description": string,"external_fees_cents": number,"gross_cents": number,"id": string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at": string | null,"provider": string | null,"provider_ref": string | null,"provider_subscription_id": string | null,"renewal_of": string | null,"status": Database["public"]['Enums']["order_status"],"target_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actual_fee_cents"?: number | null,"buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at"?: string,"creator_id": string,"creator_net_cents": number,"description"?: string,"external_fees_cents"?: number,"gross_cents": number,"id"?: string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"provider_subscription_id"?: string | null,"renewal_of"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "actual_fee_cents"?: number | null,"buyer_id"?: string,"commission_bps"?: number,"commission_cents"?: number,"commission_rule_id"?: string,"commission_rule_version"?: number,"created_at"?: string,"creator_id"?: string,"creator_net_cents"?: number,"description"?: string,"external_fees_cents"?: number,"gross_cents"?: number,"id"?: string,"idempotency_key"?: string,"kind"?: Database["public"]['Enums']["order_kind"],"method"?: string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"provider_subscription_id"?: string | null,"renewal_of"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -164,6 +244,12 @@ isOneToOne: true
       columns: ["commission_rule_id"]
 isOneToOne: false
       referencedRelation: "commission_rules"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "orders_renewal_of_fkey"
+      columns: ["renewal_of"]
+isOneToOne: false
+      referencedRelation: "orders"
       referencedColumns: ["id"]
     }
                   ]
@@ -245,6 +331,20 @@ isOneToOne: false
       referencedColumns: ["version_id"]
     }
                   ]
+                },"payment_customers": {
+                  Row: {
+                    "cpf_last4": string,"created_at": string,"provider": string,"provider_customer_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cpf_last4": string,"created_at"?: string,"provider": string,"provider_customer_id": string,"user_id": string
+                  }
+                  Update: {
+                    "cpf_last4"?: string,"created_at"?: string,"provider"?: string,"provider_customer_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"payment_events": {
                   Row: {
                     "event_id": string,"id": string,"order_id": string | null,"payload": NonNullable<Json>,"provider": string,"received_at": string,"type": string
@@ -264,6 +364,20 @@ isOneToOne: false
       referencedRelation: "orders"
       referencedColumns: ["id"]
     }
+                  ]
+                },"payment_fee_settings": {
+                  Row: {
+                    "bps": number,"created_at": string,"created_by": string | null,"effective_from": string,"fixed_cents": number,"id": string,"method": string,"provider": string,"reason": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bps"?: number,"created_at"?: string,"created_by"?: string | null,"effective_from"?: string,"fixed_cents"?: number,"id"?: string,"method": string,"provider": string,"reason"?: string
+                  }
+                  Update: {
+                    "bps"?: number,"created_at"?: string,"created_by"?: string | null,"effective_from"?: string,"fixed_cents"?: number,"id"?: string,"method"?: string,"provider"?: string,"reason"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"permissions": {
                   Row: {
@@ -435,14 +549,14 @@ isOneToOne: false
                   ]
                 },"subscriptions": {
                   Row: {
-                    "cancel_at_period_end": boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id": string,"last_order_id": string | null,"price_cents": number,"started_at": string,"status": Database["public"]['Enums']["subscription_status"],"updated_at": string
+                    "cancel_at_period_end": boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id": string,"last_order_id": string | null,"price_cents": number,"provider": string | null,"provider_subscription_id": string | null,"started_at": string,"status": Database["public"]['Enums']["subscription_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "cancel_at_period_end"?: boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id"?: string,"last_order_id"?: string | null,"price_cents": number,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
+                    "cancel_at_period_end"?: boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id"?: string,"last_order_id"?: string | null,"price_cents": number,"provider"?: string | null,"provider_subscription_id"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
                   }
                   Update: {
-                    "cancel_at_period_end"?: boolean,"creator_id"?: string,"current_period_end"?: string,"fan_id"?: string,"id"?: string,"last_order_id"?: string | null,"price_cents"?: number,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
+                    "cancel_at_period_end"?: boolean,"creator_id"?: string,"current_period_end"?: string,"fan_id"?: string,"id"?: string,"last_order_id"?: string | null,"price_cents"?: number,"provider"?: string | null,"provider_subscription_id"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -484,7 +598,15 @@ isOneToOne: false
                 }
           }
           Views: {
-            "feed_posts": {
+            "creator_balance": {
+                  Row: {
+                    "balance_cents": number | null,"creator_id": string | null,"entries": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"feed_posts": {
                   Row: {
                     "avatar_path": string | null,"body": string,"comment_count": number | null,"creator_id": string,"display_name": string,"handle": string,"id": string,"like_count": number | null,"liked_by_me": boolean | null,"media_count": number | null,"price_cents": number | null,"published_at": string | null,"unlocked": boolean | null,"video_count": number | null,"visibility": Database["public"]['Enums']["post_visibility"]
                   }
@@ -539,7 +661,7 @@ isOneToOne: false
 { Args: { "p_text": string,"p_verification_id": string }; Returns: undefined
                            },
 "attach_order_charge":
-{ Args: { "p_order_id": string,"p_provider": string,"p_provider_ref": string }; Returns: undefined
+{ Args: { "p_order_id": string,"p_provider": string,"p_provider_ref": string,"p_provider_subscription_id"?: string }; Returns: undefined
                            },
 "can_follow":
 { Args: { "p_creator_id": string }; Returns: boolean
@@ -551,10 +673,13 @@ isOneToOne: false
 { Args: { "p_creator_id": string }; Returns: undefined
                            },
 "confirm_payment":
-{ Args: { "p_event_id": string,"p_payload"?: Json,"p_provider": string,"p_provider_ref": string,"p_status": string }; Returns: string
+{ Args: { "p_event_id": string,"p_net_cents"?: number,"p_payload"?: Json,"p_provider": string,"p_provider_ref": string,"p_status": string }; Returns: string
                            },
 "create_order":
 { Args: { "p_amount_cents": number,"p_idempotency_key": string,"p_kind": Database["public"]['Enums']["order_kind"],"p_method": string,"p_target_id": string }; Returns: string
+                           },
+"create_renewal_order":
+{ Args: { "p_provider": string,"p_provider_ref": string,"p_provider_subscription_id": string }; Returns: string
                            },
 "creator_stats":
 { Args: { "p_creator_id": string }; Returns: {
@@ -640,8 +765,14 @@ isOneToOne: false
               "duration_seconds": number,"height": number,"kind": string,"position": number,"poster_path": string,"storage_path": string,"width": number
             }[]
                            },
+"prepare_order_charge":
+{ Args: { "p_order_id": string,"p_provider": string }; Returns: number
+                           },
 "propose_commission_rule":
 { Args: { "p_applies_to_tips": boolean,"p_effective_from": string,"p_rate_bps": number,"p_reason": string }; Returns: number
+                           },
+"register_payout_account":
+{ Args: { "p_account_id": string,"p_creator_id": string,"p_document_last4": string,"p_provider": string,"p_secret"?: Json,"p_status": string,"p_wallet_id": string }; Returns: undefined
                            },
 "revoke_role":
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
@@ -654,6 +785,9 @@ isOneToOne: false
                            },
 "set_package_status":
 { Args: { "p_package_id": string,"p_status": Database["public"]['Enums']["package_status"] }; Returns: undefined
+                           },
+"set_payment_fee":
+{ Args: { "p_bps": number,"p_fixed_cents": number,"p_method": string,"p_provider": string,"p_reason": string }; Returns: undefined
                            },
 "staff_can":
 { Args: { "permission": string }; Returns: boolean

@@ -10,6 +10,37 @@ export interface CommissionRule {
   effectiveFrom: string;
 }
 
+/** O fã já tem cadastro de cliente no provedor (CPF informado antes)? */
+export async function hasPaymentCustomer(userId: string, provider: string): Promise<boolean> {
+  const supabase = await createServerSupabase();
+  const { data } = await supabase
+    .from("payment_customers")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("provider", provider)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+/** Conta de recebimento do criador (subconta do provedor), se houver. */
+export async function getPayoutAccount(creatorId: string, provider: string) {
+  const supabase = await createServerSupabase();
+  const { data } = await supabase
+    .from("creator_payout_accounts")
+    .select("provider_account_id, wallet_id, status, document_last4, created_at")
+    .eq("creator_id", creatorId)
+    .eq("provider", provider)
+    .maybeSingle();
+  return data;
+}
+
+/** Saldo a repassar do criador (ledger). */
+export async function getCreatorBalanceCents(): Promise<number> {
+  const supabase = await createServerSupabase();
+  const { data } = await supabase.from("creator_balance").select("balance_cents").maybeSingle();
+  return Number(data?.balance_cents ?? 0);
+}
+
 export async function getCurrentCommissionRule(): Promise<CommissionRule | null> {
   const supabase = await createServerSupabase();
   // Mesma regra de current_commission_rule(): aprovada e já vigente, a mais recente.

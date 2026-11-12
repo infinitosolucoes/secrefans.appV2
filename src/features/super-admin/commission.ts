@@ -56,6 +56,50 @@ export async function proposeCommissionAction(
   };
 }
 
+const feeSchema = z.object({
+  provider: z.enum(["asaas"]),
+  method: z.enum(["pix", "card"]),
+  fixed: z
+    .string()
+    .trim()
+    .transform((v) => Math.round(Number(v.replace(",", ".")) * 100))
+    .pipe(z.number().int().min(0, "Valor fixo inválido").max(10000, "Máximo R$ 100")),
+  percent: z
+    .string()
+    .trim()
+    .transform((v) => Math.round(Number(v.replace(",", ".") || "0") * 100))
+    .pipe(z.number().int().min(0, "Percentual inválido").max(2000, "Máximo 20%")),
+  reason: z.string().trim().min(5, "Justificativa obrigatória (mín. 5 caracteres).").max(500),
+});
+
+/** Atualiza a taxa ESTIMADA do meio de pagamento (paga pelo criador). Vale para pedidos novos. */
+export async function setPaymentFeeAction(
+  _: AdminResult | null,
+  fd: FormData,
+): Promise<AdminResult> {
+  await requireStaffMfa("commission.manage");
+  const parsed = feeSchema.safeParse({
+    provider: fd.get("provider"),
+    method: fd.get("method"),
+    fixed: String(fd.get("fixed") ?? ""),
+    percent: String(fd.get("percent") ?? ""),
+    reason: String(fd.get("reason") ?? ""),
+  });
+  if (!parsed.success)
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.rpc("set_payment_fee", {
+    p_provider: parsed.data.provider,
+    p_method: parsed.data.method,
+    p_fixed_cents: parsed.data.fixed,
+    p_bps: parsed.data.percent,
+    p_reason: parsed.data.reason,
+  });
+  if (error) return { ok: false, message: messages[error.code ?? ""] ?? "Não foi possível salvar." };
+  revalidatePath("/super-admin/financeiro");
+  return { ok: true, message: "Taxa atualizada para os próximos pedidos." };
+}
+
 export async function decideCommissionAction(
   _: AdminResult | null,
   fd: FormData,

@@ -2,7 +2,54 @@
 
 import { useActionState } from "react";
 import { Alert, Button, Checkbox, Field, Label, Textarea } from "@/components/ui";
-import { decideCommissionAction, proposeCommissionAction } from "./commission";
+import { decideCommissionAction, proposeCommissionAction, setPaymentFeeAction } from "./commission";
+
+export function PaymentFeeForm({
+  method,
+  fixedCents,
+  bps,
+}: {
+  method: "pix" | "card";
+  fixedCents: number;
+  bps: number;
+}) {
+  const [state, action, pending] = useActionState(setPaymentFeeAction, null);
+  return (
+    <form action={action} className="flex flex-col gap-3">
+      {state && <Alert tone={state.ok ? "success" : "error"}>{state.message}</Alert>}
+      <input type="hidden" name="provider" value="asaas" />
+      <input type="hidden" name="method" value={method} />
+      <div className="grid grid-cols-2 gap-3">
+        <Field
+          name="fixed"
+          label="Fixo por cobrança (R$)"
+          inputMode="decimal"
+          defaultValue={(fixedCents / 100).toFixed(2).replace(".", ",")}
+          required
+        />
+        <Field
+          name="percent"
+          label="Percentual (%)"
+          inputMode="decimal"
+          defaultValue={(bps / 100).toString().replace(".", ",")}
+        />
+      </div>
+      <div>
+        <Label htmlFor={`fee-reason-${method}`}>Justificativa (vai para a auditoria)</Label>
+        <Textarea
+          id={`fee-reason-${method}`}
+          name="reason"
+          required
+          minLength={5}
+          className="min-h-12"
+        />
+      </div>
+      <Button type="submit" size="sm" loading={pending} className="self-start">
+        Salvar taxa
+      </Button>
+    </form>
+  );
+}
 
 export function ProposeCommissionForm({ minDate }: { minDate: string }) {
   const [state, action, pending] = useActionState(proposeCommissionAction, null);

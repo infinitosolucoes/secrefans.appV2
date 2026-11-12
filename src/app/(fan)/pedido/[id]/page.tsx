@@ -7,7 +7,9 @@ import { Alert, Badge, buttonClasses, PageHeader } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
-import { simulatedPaymentsAllowed } from "@/server/providers/payments";
+import { getAsaasProvider, simulatedPaymentsAllowed } from "@/server/providers/payments";
+import type { ProviderChargeResult } from "@/server/providers/payments/PaymentProvider";
+import { CopyButton, PendingOrderWatcher } from "@/features/commerce/PendingOrderWatcher";
 import { formatBRL, UUID_RE } from "@/features/content/constants";
 import { simulatePaymentAction } from "@/features/commerce/actions";
 import { ORDER_KIND_LABEL, ORDER_STATUS, type OrderStatus } from "@/features/commerce/constants";
@@ -42,6 +44,16 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         : `/${creator?.handle ?? ""}`;
   const simulated = order.provider === "simulado" && simulatedPaymentsAllowed();
 
+  // Asaas: busca o QR do Pix / a página segura do cartão direto no provedor.
+  let charge: ProviderChargeResult | null = null;
+  if (status === "pending" && order.provider === "asaas" && order.provider_ref) {
+    try {
+      charge = await getAsaasProvider().getCharge(order.provider_ref);
+    } catch {
+      charge = null;
+    }
+  }
+
   return (
     <AppShell user={user} active="/biblioteca">
       <PageHeader
@@ -63,7 +75,54 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {order.paid_at && ` · pago em ${formatDateTime(order.paid_at)}`}
           </p>
 
-          {status === "pending" && (
+          {status === "pending" && order.provider === "asaas" && (
+            <>
+              {order.method === "pix" && charge?.pix ? (
+                <div className="flex flex-col items-start gap-3">
+                  <p className="flex items-center gap-2 type-label text-ink">
+                    <Clock className="size-4 text-warning" aria-hidden />
+                    Escaneie o QR Code ou use o Pix copia-e-cola no app do seu banco.
+                  </p>
+                  {charge.pix.qrCodeBase64 && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`data:image/png;base64,${charge.pix.qrCodeBase64}`}
+                      alt="QR Code do Pix"
+                      width={208}
+                      height={208}
+                      className="rounded-md bg-white p-2"
+                    />
+                  )}
+                  <code className="block w-full overflow-x-auto rounded-sm border border-border bg-surface p-3 type-caption text-ink-muted">
+                    {charge.pix.copyPaste}
+                  </code>
+                  <CopyButton text={charge.pix.copyPaste} />
+                </div>
+              ) : charge?.checkoutUrl ? (
+                <div className="flex flex-col items-start gap-2">
+                  <p className="type-body text-ink-muted">
+                    Os dados do cartão são digitados na página segura do Asaas e não ficam na
+                    Secretfans.
+                  </p>
+                  <a
+                    href={charge.checkoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={buttonClasses("primary", "md")}
+                  >
+                    Pagar com cartão
+                  </a>
+                </div>
+              ) : (
+                <Alert tone="error">
+                  Não foi possível carregar os dados de pagamento agora. Tente atualizar a página.
+                </Alert>
+              )}
+              <PendingOrderWatcher />
+            </>
+          )}
+
+          {status === "pending" && order.provider !== "asaas" && (
             <>
               {order.method === "pix" ? (
                 <div className="flex flex-col gap-2">

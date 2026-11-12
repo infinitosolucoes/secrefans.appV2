@@ -52,6 +52,10 @@ export interface VerifiedProviderEvent {
   /** Normalizado para o banco: referência da cobrança e o novo status. */
   chargeId: string;
   status: "paid" | "failed" | "refunded" | "chargeback";
+  /** Valor líquido real (após a taxa do provedor), em centavos. Ausente no simulado. */
+  netCents?: number;
+  /** Assinatura do provedor à qual a cobrança pertence (renovações). */
+  subscriptionId?: string;
 }
 
 export interface PaymentProvider {

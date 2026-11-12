@@ -18,6 +18,13 @@ test.beforeAll(async () => {
   const { data: orders } = await db.from("orders").select("id").eq("buyer_id", USERS.fan.id);
   const ids = (orders ?? []).map((o) => o.id);
   if (ids.length) {
+    // Ledger é imutável; o banco local (marcado pelo seed) permite a limpeza dos testes.
+    const { data: entries } = await db.from("ledger_entries").select("id").in("order_id", ids);
+    const entryIds = (entries ?? []).map((e) => e.id);
+    if (entryIds.length) {
+      await db.from("ledger_lines").delete().in("entry_id", entryIds);
+      await db.from("ledger_entries").delete().in("id", entryIds);
+    }
     await db.from("entitlements").delete().in("order_id", ids);
     await db.from("subscriptions").update({ last_order_id: null }).in("last_order_id", ids);
     await db.from("orders").delete().in("id", ids);
