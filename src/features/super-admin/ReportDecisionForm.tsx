@@ -7,9 +7,12 @@ import { decideReportAction } from "./reports";
 export function ReportDecisionForm({
   reportId,
   canRemove,
+  telegram,
 }: {
   reportId: string;
   canRemove: boolean;
+  /** Denúncia de mensagem do grupo do Telegram: troca "Retirar o conteúdo" pela ação no bot. */
+  telegram: boolean;
 }) {
   const [state, action, pending] = useActionState(decideReportAction, null);
   if (state?.ok) return <Alert tone="success">{state.message}</Alert>;
@@ -38,10 +41,24 @@ export function ReportDecisionForm({
           />
         </div>
       </div>
-      {canRemove && (
-        <Checkbox name="removeTarget">
-          Retirar o conteúdo denunciado (só vale para decisão procedente)
-        </Checkbox>
+      {telegram ? (
+        <div className="sm:max-w-xs">
+          <Label htmlFor={`${id}-telegram`} hint="só vale para decisão procedente">
+            Ação no Telegram
+          </Label>
+          <Select id={`${id}-telegram`} name="telegramAction" defaultValue="none">
+            <option value="none">Nenhuma</option>
+            <option value="delete">Apagar a mensagem</option>
+            <option value="mute24">Silenciar o autor por 24 h</option>
+            <option value="ban">Banir o autor do grupo</option>
+          </Select>
+        </div>
+      ) : (
+        canRemove && (
+          <Checkbox name="removeTarget">
+            Retirar o conteúdo denunciado (só vale para decisão procedente)
+          </Checkbox>
+        )
       )}
       <Button type="submit" size="sm" loading={pending} className="self-start">
         Registrar decisão

@@ -1,18 +1,32 @@
 import type { Metadata } from "next";
 import { Alert, Badge, Card, CardTitle, PageHeader } from "@/components/ui";
+import { hasPermission } from "@/server/authorization/roles";
 import { requireStaffMfa } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { formatDateTime } from "@/lib/format";
+import { TelegramSettingsForm } from "@/features/super-admin/TelegramSettingsForm";
 
 export const metadata: Metadata = { title: "Configurações · Admin" };
 
 export default async function Page() {
-  await requireStaffMfa("settings.read");
+  const user = await requireStaffMfa("settings.read");
+  // Bot do Telegram: leitura e edição exigem settings.manage (RLS de telegram_settings).
+  const canManage = hasPermission(user.roles, "settings.manage");
   const supabase = await createServerSupabase();
-  const [settings, flags] = await Promise.all([
+  const [settings, flags, telegram] = await Promise.all([
     supabase.from("platform_settings").select("key, value, description, updated_at").order("key"),
     supabase.from("feature_flags").select("key, enabled, description, updated_at").order("key"),
+    canManage
+      ? supabase
+          .from("telegram_settings")
+          .select(
+            "rules_text, welcome_text, allowed_domains, warn_limit, auto_mute_hours, flood_repeat_limit, flood_window_seconds, updated_at",
+          )
+          .eq("id", true)
+          .maybeSingle()
+      : Promise.resolve(null),
   ]);
+  const tg = telegram?.data;
 
   return (
     <>
@@ -59,6 +73,36 @@ export default async function Page() {
           </ul>
         </Card>
       </div>
+      {canManage && (
+        <Card className="mt-4">
+          <CardTitle>Bot do Telegram</CardTitle>
+          {tg ? (
+            <>
+              <p className="mt-1 type-caption text-ink-muted">
+                Atualizado {formatDateTime(tg.updated_at)}. Vale para as próximas mensagens do
+                grupo.
+              </p>
+              <div className="mt-4">
+                <TelegramSettingsForm
+                  initial={{
+                    rulesText: tg.rules_text,
+                    welcomeText: tg.welcome_text,
+                    allowedDomains: tg.allowed_domains,
+                    warnLimit: tg.warn_limit,
+                    autoMuteHours: tg.auto_mute_hours,
+                    floodRepeatLimit: tg.flood_repeat_limit,
+                    floodWindowSeconds: tg.flood_window_seconds,
+                  }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="mt-3">
+              <Alert tone="error">Não foi possível carregar as configurações do bot.</Alert>
+            </div>
+          )}
+        </Card>
+      )}
     </>
   );
 }

@@ -1,6 +1,9 @@
 import "server-only";
 import { createBotApi, TelegramApiError, type BotApi } from "./client";
 import { telegramConfig, type TelegramConfig } from "./config";
+import { publicEnv } from "@/lib/env";
+import type { Ctx } from "./handler";
+import { applyBan, applyMute } from "./punishments";
 import { createTelegramRepo, type TelegramRepo } from "./repo";
 
 export interface GroupDeps {
@@ -87,4 +90,39 @@ export async function sweepGroupMembers(deps?: GroupDeps): Promise<{ removed: nu
     }
   }
   return { removed };
+}
+
+// Ações do Super Admin (decisão de denúncias) ----------------------------------------------------
+// Ao contrário de removeUserFromGroup, estas LANÇAM com o bot desligado ou erro da Bot API: a
+// decisão da denúncia só é registrada se a ação no Telegram tiver acontecido.
+
+function requireCtx(): Ctx {
+  const config = loadConfig();
+  if (!config) throw new Error("Bot do Telegram desligado.");
+  return {
+    api: createBotApi(config.token),
+    repo: createTelegramRepo(),
+    config,
+    siteUrl: publicEnv().NEXT_PUBLIC_SITE_URL,
+  };
+}
+
+export async function deleteGroupMessage(chatId: number, messageId: number): Promise<void> {
+  const { api } = requireCtx();
+  await api.deleteMessage(chatId, messageId);
+}
+
+/** Mesmo caminho do /mute do bot: restrição + status muted + auditoria telegram.mute. */
+export async function muteTelegramUser(
+  tgId: number,
+  hours: number,
+  actor: string,
+  reason: string,
+): Promise<void> {
+  await applyMute(requireCtx(), tgId, hours, actor, reason);
+}
+
+/** Mesmo caminho do /ban do bot: status banned + ban + auditoria telegram.ban. */
+export async function banTelegramUser(tgId: number, actor: string, reason: string): Promise<void> {
+  await applyBan(requireCtx(), tgId, actor, reason);
 }

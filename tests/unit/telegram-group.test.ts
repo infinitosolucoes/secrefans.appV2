@@ -15,8 +15,15 @@ vi.mock("@/server/telegram/client", () => ({
   TelegramApiError: class TelegramApiError extends Error {},
 }));
 vi.mock("@/server/telegram/repo", () => ({ createTelegramRepo: vi.fn(() => repo) }));
+vi.mock("@/lib/env", () => ({ publicEnv: () => ({ NEXT_PUBLIC_SITE_URL: "https://site.test" }) }));
 
-import { removeUserFromGroup, sweepGroupMembers } from "@/server/telegram/group";
+import {
+  banTelegramUser,
+  deleteGroupMessage,
+  muteTelegramUser,
+  removeUserFromGroup,
+  sweepGroupMembers,
+} from "@/server/telegram/group";
 
 function fakeApi(): BotApi {
   return {
@@ -186,5 +193,70 @@ describe("sweepGroupMembers", () => {
   it("sem deps e bot desligado: removed 0", async () => {
     telegramConfig.mockReturnValue(null);
     expect(await sweepGroupMembers()).toEqual({ removed: 0 });
+  });
+});
+
+describe("ações do Super Admin no Telegram", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    telegramConfig.mockReturnValue(cfg);
+    api = fakeApi();
+    repo = fakeRepo();
+  });
+
+  it("bot desligado: as três lançam", async () => {
+    telegramConfig.mockReturnValue(null);
+    await expect(deleteGroupMessage(GROUP, 7)).rejects.toThrow();
+    await expect(muteTelegramUser(555, 24, ADMIN, "x")).rejects.toThrow();
+    await expect(banTelegramUser(555, ADMIN, "x")).rejects.toThrow();
+    expect(api.deleteMessage).not.toHaveBeenCalled();
+  });
+
+  it("deleteGroupMessage apaga a mensagem; erro da API propaga", async () => {
+    await deleteGroupMessage(GROUP, 7);
+    expect(api.deleteMessage).toHaveBeenCalledWith(GROUP, 7);
+    (api.deleteMessage as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
+    await expect(deleteGroupMessage(GROUP, 7)).rejects.toThrow("api");
+  });
+
+  it("muteTelegramUser restringe, grava muted e audita", async () => {
+    await muteTelegramUser(555, 24, ADMIN, "denúncia");
+    expect(api.restrictChatMember).toHaveBeenCalledWith(GROUP, 555, expect.any(Number));
+    expect(repo.upsertMember).toHaveBeenCalledWith(
+      555,
+      expect.objectContaining({ status: "muted", lastActionBy: ADMIN }),
+    );
+    expect(repo.logAction).toHaveBeenCalledWith(
+      ADMIN,
+      "telegram.mute",
+      555,
+      "denúncia",
+      expect.objectContaining({ hours: 24 }),
+    );
+  });
+
+  it("muteTelegramUser: erro da API propaga sem auditar", async () => {
+    (api.restrictChatMember as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
+    await expect(muteTelegramUser(555, 24, ADMIN, "x")).rejects.toThrow("api");
+    expect(repo.logAction).not.toHaveBeenCalled();
+  });
+
+  it("banTelegramUser bane, grava banned e audita", async () => {
+    await banTelegramUser(555, ADMIN, "denúncia");
+    expect(api.banChatMember).toHaveBeenCalledWith(GROUP, 555);
+    expect(repo.upsertMember).toHaveBeenCalledWith(555, { status: "banned", lastActionBy: ADMIN });
+    expect(repo.logAction).toHaveBeenCalledWith(
+      ADMIN,
+      "telegram.ban",
+      555,
+      "denúncia",
+      expect.any(Object),
+    );
+  });
+
+  it("banTelegramUser: erro da API propaga sem auditar", async () => {
+    (api.banChatMember as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("api"));
+    await expect(banTelegramUser(555, ADMIN, "x")).rejects.toThrow("api");
+    expect(repo.logAction).not.toHaveBeenCalled();
   });
 });
