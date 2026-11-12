@@ -9,6 +9,11 @@ const serverSchema = z.object({
   ALLOW_SIMULATED_PAYMENTS: z.enum(["true", "false"]).default("false"),
   /** Segredo HMAC do webhook simulado. */
   SIMULATED_WEBHOOK_SECRET: z.string().min(16).optional(),
+  /**
+   * Estágio do deploy. "hml" marca o projeto de homologação, onde o deploy de produção da
+   * Vercel pode usar o pagamento simulado. A produção real fica com "producao" (padrão).
+   */
+  APP_STAGE: z.enum(["local", "hml", "producao"]).default("producao"),
 });
 
 export function serverEnv() {
@@ -17,5 +22,6 @@ export function serverEnv() {
     PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || undefined,
     ALLOW_SIMULATED_PAYMENTS: process.env.ALLOW_SIMULATED_PAYMENTS || undefined,
     SIMULATED_WEBHOOK_SECRET: process.env.SIMULATED_WEBHOOK_SECRET || undefined,
+    APP_STAGE: process.env.APP_STAGE || undefined,
   });
 }
