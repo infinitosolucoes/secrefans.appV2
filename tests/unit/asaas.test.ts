@@ -218,6 +218,28 @@ describe("AsaasPaymentProvider", () => {
     });
   });
 
+  it("webhook informa o valor repassado ao criador via split", async () => {
+    const { p } = provider({
+      "GET /payments/pay_s": {
+        id: "pay_s",
+        status: "RECEIVED",
+        value: 500,
+        netValue: 498.01,
+        split: [
+          { walletId: "w", fixedValue: 448.01, totalValue: 448.01, status: "DONE" },
+          { walletId: "x", fixedValue: 10, totalValue: 10, status: "CANCELLED" },
+        ],
+      },
+    });
+    const body = JSON.stringify({
+      id: "evt_s",
+      event: "PAYMENT_RECEIVED",
+      payment: { id: "pay_s" },
+    });
+    const e = await p.verifyWebhook(new Headers({ "asaas-access-token": TOKEN }), body);
+    expect(e).toMatchObject({ netCents: 49801, splitCents: 44801 });
+  });
+
   it("eventos que não mudam o pedido são ignorados", async () => {
     const { p } = provider({
       "GET /payments/pay_3": { id: "pay_3", status: "PENDING", value: 10 },

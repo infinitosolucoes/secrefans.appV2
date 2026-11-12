@@ -229,14 +229,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "actual_fee_cents": number | null,"buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at": string,"creator_id": string,"creator_net_cents": number,"description": string,"external_fees_cents": number,"gross_cents": number,"id": string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at": string | null,"provider": string | null,"provider_ref": string | null,"provider_subscription_id": string | null,"renewal_of": string | null,"status": Database["public"]['Enums']["order_status"],"target_id": string,"updated_at": string
+                    "actual_fee_cents": number | null,"buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at": string,"creator_id": string,"creator_net_cents": number,"description": string,"external_fees_cents": number,"gross_cents": number,"id": string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at": string | null,"provider": string | null,"provider_ref": string | null,"provider_subscription_id": string | null,"renewal_of": string | null,"split_cents": number,"status": Database["public"]['Enums']["order_status"],"target_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "actual_fee_cents"?: number | null,"buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at"?: string,"creator_id": string,"creator_net_cents": number,"description"?: string,"external_fees_cents"?: number,"gross_cents": number,"id"?: string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"provider_subscription_id"?: string | null,"renewal_of"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id": string,"updated_at"?: string
+                    "actual_fee_cents"?: number | null,"buyer_id": string,"commission_bps": number,"commission_cents": number,"commission_rule_id": string,"commission_rule_version": number,"created_at"?: string,"creator_id": string,"creator_net_cents": number,"description"?: string,"external_fees_cents"?: number,"gross_cents": number,"id"?: string,"idempotency_key": string,"kind": Database["public"]['Enums']["order_kind"],"method": string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"provider_subscription_id"?: string | null,"renewal_of"?: string | null,"split_cents"?: number,"status"?: Database["public"]['Enums']["order_status"],"target_id": string,"updated_at"?: string
                   }
                   Update: {
-                    "actual_fee_cents"?: number | null,"buyer_id"?: string,"commission_bps"?: number,"commission_cents"?: number,"commission_rule_id"?: string,"commission_rule_version"?: number,"created_at"?: string,"creator_id"?: string,"creator_net_cents"?: number,"description"?: string,"external_fees_cents"?: number,"gross_cents"?: number,"id"?: string,"idempotency_key"?: string,"kind"?: Database["public"]['Enums']["order_kind"],"method"?: string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"provider_subscription_id"?: string | null,"renewal_of"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"target_id"?: string,"updated_at"?: string
+                    "actual_fee_cents"?: number | null,"buyer_id"?: string,"commission_bps"?: number,"commission_cents"?: number,"commission_rule_id"?: string,"commission_rule_version"?: number,"created_at"?: string,"creator_id"?: string,"creator_net_cents"?: number,"description"?: string,"external_fees_cents"?: number,"gross_cents"?: number,"id"?: string,"idempotency_key"?: string,"kind"?: Database["public"]['Enums']["order_kind"],"method"?: string,"paid_at"?: string | null,"provider"?: string | null,"provider_ref"?: string | null,"provider_subscription_id"?: string | null,"renewal_of"?: string | null,"split_cents"?: number,"status"?: Database["public"]['Enums']["order_status"],"target_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -673,7 +673,7 @@ isOneToOne: false
 { Args: { "p_creator_id": string }; Returns: undefined
                            },
 "confirm_payment":
-{ Args: { "p_event_id": string,"p_net_cents"?: number,"p_payload"?: Json,"p_provider": string,"p_provider_ref": string,"p_status": string }; Returns: string
+{ Args: { "p_event_id": string,"p_net_cents"?: number,"p_payload"?: Json,"p_provider": string,"p_provider_ref": string,"p_split_cents"?: number,"p_status": string }; Returns: string
                            },
 "create_order":
 { Args: { "p_amount_cents": number,"p_idempotency_key": string,"p_kind": Database["public"]['Enums']["order_kind"],"p_method": string,"p_target_id": string }; Returns: string
@@ -770,6 +770,9 @@ isOneToOne: false
                            },
 "propose_commission_rule":
 { Args: { "p_applies_to_tips": boolean,"p_effective_from": string,"p_rate_bps": number,"p_reason": string }; Returns: number
+                           },
+"record_split_settlement":
+{ Args: { "p_order_id": string,"p_split_cents": number }; Returns: string
                            },
 "register_payout_account":
 { Args: { "p_account_id": string,"p_creator_id": string,"p_document_last4": string,"p_provider": string,"p_secret"?: Json,"p_status": string,"p_wallet_id": string }; Returns: undefined

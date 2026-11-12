@@ -48,6 +48,14 @@ export interface AsaasPayment {
   subscription?: string | null;
   externalReference?: string | null;
   deleted?: boolean;
+  split?: Array<{ walletId: string; fixedValue?: number; totalValue?: number; status?: string }>;
+}
+
+/** Total repassado via split (ignora splits cancelados/recusados), em centavos. */
+export function splitTotalCents(p: Pick<AsaasPayment, "split">): number {
+  return (p.split ?? [])
+    .filter((s) => !["CANCELLED", "REFUSED"].includes(s.status ?? ""))
+    .reduce((sum, s) => sum + Math.round((s.totalValue ?? s.fixedValue ?? 0) * 100), 0);
 }
 
 export interface SplitTarget {
@@ -310,6 +318,7 @@ export class AsaasPaymentProvider {
       netCents:
         status === "paid" && payment.netValue != null ? toCents(payment.netValue) : undefined,
       subscriptionId: payment.subscription ?? undefined,
+      splitCents: status === "paid" ? splitTotalCents(payment) : undefined,
     };
   }
 }

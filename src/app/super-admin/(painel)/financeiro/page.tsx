@@ -73,7 +73,7 @@ export default async function Page() {
         {[
           { label: "Recebido do provedor (líquido)", value: totals.provider_clearing },
           { label: "Receita Secretfans (comissões)", value: totals.platform_revenue },
-          { label: "A repassar / repassado a criadores", value: totals.creator_payable },
+          { label: "A repassar a criadores (fora do split)", value: totals.creator_payable },
           { label: "Variação de taxa (plataforma)", value: totals.fee_variance },
         ].map((c) => (
           <div key={c.label} className="rounded-lg border border-border bg-surface-alt p-4">

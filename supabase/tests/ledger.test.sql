@@ -2,7 +2,7 @@
 -- Usuários do seed.sql: fan ...001, criador ...002, super_admin ...004.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(32);
 
 create or replace function pg_temp.as_user(uid uuid, aal text default 'aal1') returns void language plpgsql as $$
 begin
@@ -109,6 +109,30 @@ select is((select coalesce(sum(credit_cents) - sum(debit_cents), 0)::int from pu
   'saldo do criador volta a zero após o estorno');
 select is((select count(*)::int from public.entitlements where order_id = (select id from t_ord) and revoked_at is null), 0,
   'estorno revoga o acesso');
+
+-- Venda com split: o repasse direto ao criador sai do saldo "a repassar" ---------------------
+select pg_temp.as_user('00000000-0000-4000-a000-000000000001');
+create temp table t_split as
+  select public.create_order('ppv', '66666666-0000-4000-a000-000000000011', null, 'pix', 'ledger-ppv-002') as id;
+grant select on t_split to authenticated, service_role;
+select throws_ok($$ select public.record_split_settlement((select id from t_split), 100) $$,
+  '42501', null, 'fã não registra repasse');
+reset role;
+select pg_temp.as_service();
+select public.prepare_order_charge((select id from t_split), 'asaas');
+select public.attach_order_charge((select id from t_split), 'asaas', 'pay_split_1');
+-- R$ 19,90: líquido real R$ 17,91; split de R$ 15,92 direto para o criador.
+select is(public.confirm_payment('asaas', 'evt_s5_split', 'pay_split_1', 'paid', '{}'::jsonb, 1791, 1592), 'paid',
+  'venda com split confirmada');
+reset role;
+select is((select count(*)::int from public.ledger_entries where order_id = (select id from t_split) and kind = 'split_settlement'), 1,
+  'repasse via split vira lançamento próprio');
+select is((select coalesce(sum(credit_cents) - sum(debit_cents), 0)::int from public.ledger_lines
+            where account_code = 'creator_payable:00000000-0000-4000-a000-000000000002'), 0,
+  'com o split, nada fica a repassar ao criador');
+select is((select (sum(debit_cents) - sum(credit_cents))::int from public.ledger_lines
+            where account_code = 'provider_clearing:asaas'), 199,
+  'na conta do Asaas fica só a comissão da plataforma (R$ 1,99)');
 
 -- Assinatura no Asaas e renovação com a regra vigente ------------------------------------
 select pg_temp.as_user('00000000-0000-4000-a000-000000000001');

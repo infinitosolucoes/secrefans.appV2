@@ -69,6 +69,7 @@ export async function applyPaymentEvent(event: VerifiedProviderEvent): Promise<s
     p_status: event.status,
     p_payload: event.payload as never,
     ...(event.netCents != null ? { p_net_cents: event.netCents } : {}),
+    ...(event.splitCents ? { p_split_cents: event.splitCents } : {}),
   });
   if (error) throw new Error(`confirm_payment: ${error.code ?? "erro"}`);
   return data ?? "ignored";

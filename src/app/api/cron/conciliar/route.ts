@@ -7,7 +7,7 @@ import {
   applyPaymentEvent,
   getAsaasProvider,
 } from "@/server/providers/payments";
-import { normalizeAsaasStatus } from "@/server/providers/payments/asaas";
+import { normalizeAsaasStatus, splitTotalCents } from "@/server/providers/payments/asaas";
 
 export const maxDuration = 60;
 
@@ -67,6 +67,7 @@ export async function GET(request: Request) {
         payload: { source: "conciliacao", payment: { id: payment.id, status: payment.status } },
         chargeId: payment.id,
         status,
+        splitCents: status === "paid" ? splitTotalCents(payment) : undefined,
         netCents:
           status === "paid" && payment.netValue != null
             ? Math.round(payment.netValue * 100)

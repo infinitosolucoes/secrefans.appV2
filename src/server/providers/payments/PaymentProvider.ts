@@ -56,6 +56,8 @@ export interface VerifiedProviderEvent {
   netCents?: number;
   /** Assinatura do provedor à qual a cobrança pertence (renovações). */
   subscriptionId?: string;
+  /** Quanto o provedor repassou direto ao criador via split, em centavos. */
+  splitCents?: number;
 }
 
 export interface PaymentProvider {

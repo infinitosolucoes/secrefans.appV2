@@ -38,12 +38,12 @@ export default async function Page() {
         <section className="flex flex-wrap items-center gap-4 rounded-lg border border-accent bg-surface-alt p-5 shadow-glow-sm">
           <Wallet className="size-8 text-accent" aria-hidden />
           <div className="flex-1">
-            <p className="type-caption text-ink-muted">Saldo líquido das vendas</p>
+            <p className="type-caption text-ink-muted">Saldo a receber pela Secretfans</p>
             <p className="text-2xl font-extrabold text-accent-text">{formatBRL(balance)}</p>
           </div>
           <p className="max-w-xs type-caption text-ink-muted">
-            Já descontados a comissão da Secretfans e a taxa do meio de pagamento. Estornos e
-            chargebacks são abatidos.
+            Vendas sem split, já descontados a comissão e a taxa. As vendas com split caem direto na
+            sua conta Asaas e não entram aqui. Estornos e chargebacks são abatidos.
           </p>
         </section>
 
