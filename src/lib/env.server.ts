@@ -19,6 +19,8 @@ const serverSchema = z.object({
   ASAAS_ENV: z.enum(["sandbox", "production"]).default("sandbox"),
   /** Token que o Asaas envia no header asaas-access-token dos webhooks. */
   ASAAS_WEBHOOK_TOKEN: z.string().min(32).optional(),
+  /** Token do "mecanismo de validação de saque" (Asaas → Integrações → Mecanismos de segurança). */
+  ASAAS_TRANSFER_VALIDATION_TOKEN: z.string().min(32).optional(),
   /** Segredo do cron de conciliação (a Vercel envia como Bearer). */
   CRON_SECRET: z.string().min(16).optional(),
   /** E-mails de notificação (Resend). Sem a chave, as notificações ficam só no site. */
@@ -36,6 +38,7 @@ export function serverEnv() {
     ASAAS_API_KEY: process.env.ASAAS_API_KEY || undefined,
     ASAAS_ENV: process.env.ASAAS_ENV || undefined,
     ASAAS_WEBHOOK_TOKEN: process.env.ASAAS_WEBHOOK_TOKEN || undefined,
+    ASAAS_TRANSFER_VALIDATION_TOKEN: process.env.ASAAS_TRANSFER_VALIDATION_TOKEN || undefined,
     CRON_SECRET: process.env.CRON_SECRET || undefined,
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
     EMAIL_FROM: process.env.EMAIL_FROM || undefined,

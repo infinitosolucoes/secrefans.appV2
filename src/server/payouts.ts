@@ -1,4 +1,9 @@
 import "server-only";
+import {
+  matchWithdrawal,
+  type ValidationAnswer,
+  type ValidationRequest,
+} from "@/lib/transfer-validation";
 import { createServiceSupabase } from "@/server/auth/supabase";
 import {
   activeProviderName,
@@ -189,4 +194,26 @@ export async function applyTransferWebhook(t: AsaasTransfer) {
     });
   }
   return applyTransfer(id, t);
+}
+
+/**
+ * Validação de saque (Asaas → Secretfans, antes de executar a transferência). Aprova só a
+ * transferência de um saque em processamento; vincula o id da transferência se ainda não houver.
+ */
+export async function validateTransferRequest(req: ValidationRequest): Promise<ValidationAnswer> {
+  const db = createServiceSupabase();
+  const { data } = await db
+    .from("withdrawals")
+    .select("id, amount_cents, pix_key_type, pix_key_value, provider_transfer_id, decided_at")
+    .eq("status", "processing")
+    .limit(50);
+  const { answer, withdrawal } = matchWithdrawal(req, data ?? []);
+  if (answer.status === "APPROVED" && withdrawal && !withdrawal.provider_transfer_id) {
+    await db.rpc("attach_withdrawal_transfer", {
+      p_id: withdrawal.id,
+      p_provider: "asaas",
+      p_transfer_id: req.transfer!.id!,
+    });
+  }
+  return answer;
 }
