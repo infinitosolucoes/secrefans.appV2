@@ -30,6 +30,8 @@ test.beforeAll(async () => {
     await db.from("orders").delete().in("id", ids);
   }
   await db.from("subscriptions").delete().eq("fan_id", USERS.fan.id);
+  await db.from("subscription_promotions").delete().eq("creator_id", USERS.creator.id);
+  await db.from("subscription_plans").delete().eq("creator_id", USERS.creator.id);
   await db.from("commission_rules").delete().gt("version", 1);
   await db.from("posts").delete().in("id", [PPV_ID, SUB_ID]);
 
@@ -116,7 +118,10 @@ test("fã compra PPV e o conteúdo é liberado após o pagamento", async ({ page
 test("fã assina o criador e vê o post de assinantes", async ({ page }) => {
   await login(page, USERS.fan.email);
   await page.goto("/criador_teste");
-  await page.getByRole("link", { name: "Assinar agora" }).click();
+  await page
+    .getByRole("list", { name: "Planos de assinatura" })
+    .getByRole("link", { name: /Mensal/ })
+    .click();
   await page.getByText("Cartão de crédito", { exact: true }).click();
   await page.getByLabel(/política de compras/).check();
   await page.getByRole("button", { name: "Pagar R$ 29,90" }).click();
