@@ -254,3 +254,51 @@ export async function getCheckoutItem(
     blocked: id === viewerId ? "Você não pode enviar um mimo para si." : undefined,
   };
 }
+
+export interface PayoutSummary {
+  balance: number;
+  held: number;
+  reserved: number;
+  available: number;
+  min: number;
+  holdDaysPix: number;
+  holdDaysCard: number;
+}
+
+/** Saldo para saque do criador logado (total, retido, reservado e disponível). */
+export async function getPayoutSummary(): Promise<PayoutSummary> {
+  const supabase = await createServerSupabase();
+  const { data } = await supabase.rpc("creator_payout_summary", {}).maybeSingle();
+  return {
+    balance: Number(data?.balance_cents ?? 0),
+    held: Number(data?.held_cents ?? 0),
+    reserved: Number(data?.reserved_cents ?? 0),
+    available: Number(data?.available_cents ?? 0),
+    min: Number(data?.min_cents ?? 2000),
+    holdDaysPix: Number(data?.hold_days_pix ?? 7),
+    holdDaysCard: Number(data?.hold_days_card ?? 32),
+  };
+}
+
+export async function getPixKey(creatorId: string) {
+  const supabase = await createServerSupabase();
+  const { data } = await supabase
+    .from("creator_pix_keys")
+    .select("key_type, key_value, updated_at")
+    .eq("creator_id", creatorId)
+    .maybeSingle();
+  return data;
+}
+
+export async function getWithdrawals(creatorId: string, limit = 20) {
+  const supabase = await createServerSupabase();
+  const { data } = await supabase
+    .from("withdrawals")
+    .select(
+      "id, amount_cents, fee_cents, status, pix_key_type, pix_key_value, requested_at, paid_at, decision_reason, failure_reason",
+    )
+    .eq("creator_id", creatorId)
+    .order("requested_at", { ascending: false })
+    .limit(limit);
+  return data ?? [];
+}

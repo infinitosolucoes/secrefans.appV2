@@ -37,7 +37,7 @@ const ROLE_PERMISSIONS: Record<AppRole, readonly string[]> = {
     "reports.decide",
     "content.moderate",
   ],
-  finance: ["users.read", "audit.read", "finance.read"],
+  finance: ["users.read", "audit.read", "finance.read", "payout.manage"],
   admin_ops: [
     "users.read",
     "users.manage",
@@ -62,6 +62,7 @@ const ROLE_PERMISSIONS: Record<AppRole, readonly string[]> = {
     "content.moderate",
     "finance.read",
     "commission.manage",
+    "payout.manage",
   ],
 };
 

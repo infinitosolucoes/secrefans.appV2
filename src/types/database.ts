@@ -113,6 +113,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"creator_pix_keys": {
+                  Row: {
+                    "creator_id": string,"key_type": string,"key_value": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "creator_id": string,"key_type": string,"key_value": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "creator_id"?: string,"key_type"?: string,"key_value"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"creator_verifications": {
                   Row: {
                     "appeal_text": string | null,"appealed_at": string | null,"birth_date": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"decision_reason": string | null,"document_back_path": string | null,"document_front_path": string,"id": string,"legal_name": string,"selfie_path": string,"status": Database["public"]['Enums']["verification_status"],"submitted_at": string,"updated_at": string,"user_id": string
@@ -191,14 +205,14 @@ isOneToOne: true
                   ]
                 },"ledger_entries": {
                   Row: {
-                    "created_at": string,"id": number,"kind": string,"memo": string,"order_id": string,"payment_event_id": string | null
+                    "created_at": string,"id": number,"kind": string,"memo": string,"order_id": string | null,"payment_event_id": string | null,"withdrawal_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: never,"kind": string,"memo"?: string,"order_id": string,"payment_event_id"?: string | null
+                    "created_at"?: string,"id"?: never,"kind": string,"memo"?: string,"order_id"?: string | null,"payment_event_id"?: string | null,"withdrawal_id"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: never,"kind"?: string,"memo"?: string,"order_id"?: string,"payment_event_id"?: string | null
+                    "created_at"?: string,"id"?: never,"kind"?: string,"memo"?: string,"order_id"?: string | null,"payment_event_id"?: string | null,"withdrawal_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -212,6 +226,12 @@ isOneToOne: false
       columns: ["payment_event_id"]
 isOneToOne: false
       referencedRelation: "payment_events"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ledger_entries_withdrawal_id_fkey"
+      columns: ["withdrawal_id"]
+isOneToOne: false
+      referencedRelation: "withdrawals"
       referencedColumns: ["id"]
     }
                   ]
@@ -697,6 +717,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"withdrawals": {
+                  Row: {
+                    "amount_cents": number,"creator_id": string,"decided_at": string | null,"decided_by": string | null,"decision_reason": string | null,"failure_reason": string | null,"fee_cents": number,"id": string,"paid_at": string | null,"pix_key_type": string,"pix_key_value": string,"provider": string | null,"provider_transfer_id": string | null,"requested_at": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"creator_id": string,"decided_at"?: string | null,"decided_by"?: string | null,"decision_reason"?: string | null,"failure_reason"?: string | null,"fee_cents"?: number,"id"?: string,"paid_at"?: string | null,"pix_key_type": string,"pix_key_value": string,"provider"?: string | null,"provider_transfer_id"?: string | null,"requested_at"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_cents"?: number,"creator_id"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"decision_reason"?: string | null,"failure_reason"?: string | null,"fee_cents"?: number,"id"?: string,"paid_at"?: string | null,"pix_key_type"?: string,"pix_key_value"?: string,"provider"?: string | null,"provider_transfer_id"?: string | null,"requested_at"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
@@ -765,6 +799,9 @@ isOneToOne: false
 "attach_order_charge":
 { Args: { "p_order_id": string,"p_provider": string,"p_provider_ref": string,"p_provider_subscription_id"?: string }; Returns: undefined
                            },
+"attach_withdrawal_transfer":
+{ Args: { "p_id": string,"p_provider": string,"p_transfer_id": string }; Returns: undefined
+                           },
 "can_follow":
 { Args: { "p_creator_id": string }; Returns: boolean
                            },
@@ -774,6 +811,9 @@ isOneToOne: false
 "cancel_subscription":
 { Args: { "p_creator_id": string }; Returns: undefined
                            },
+"cancel_withdrawal":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
 "confirm_payment":
 { Args: { "p_event_id": string,"p_net_cents"?: number,"p_payload"?: Json,"p_provider": string,"p_provider_ref": string,"p_split_cents"?: number,"p_status": string }; Returns: string
                            },
@@ -782,6 +822,11 @@ isOneToOne: false
                            },
 "create_renewal_order":
 { Args: { "p_provider": string,"p_provider_ref": string,"p_provider_subscription_id": string }; Returns: string
+                           },
+"creator_payout_summary":
+{ Args: { "p_creator"?: string }; Returns: {
+              "available_cents": number,"balance_cents": number,"held_cents": number,"hold_days_card": number,"hold_days_pix": number,"min_cents": number,"reserved_cents": number
+            }[]
                            },
 "creator_stats":
 { Args: { "p_creator_id": string }; Returns: {
@@ -818,6 +863,31 @@ isOneToOne: false
 "decide_report":
 { Args: { "p_reason": string,"p_remove_target"?: boolean,"p_report_id": string,"p_status": Database["public"]['Enums']["report_status"] }; Returns: undefined
                            },
+"decide_withdrawal":
+{ Args: { "p_approve": boolean,"p_id": string,"p_reason": string }; Returns: {
+              "amount_cents": number,
+"creator_id": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"decision_reason": string | null,
+"failure_reason": string | null,
+"fee_cents": number,
+"id": string,
+"paid_at": string | null,
+"pix_key_type": string,
+"pix_key_value": string,
+"provider": string | null,
+"provider_transfer_id": string | null,
+"requested_at": string,
+"status": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "withdrawals"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "delete_message":
 { Args: { "p_message_id": string }; Returns: undefined
                            },
@@ -898,6 +968,9 @@ isOneToOne: false
 "register_payout_account":
 { Args: { "p_account_id": string,"p_creator_id": string,"p_document_last4": string,"p_provider": string,"p_secret"?: Json,"p_status": string,"p_wallet_id": string }; Returns: undefined
                            },
+"request_withdrawal":
+{ Args: { "p_amount_cents": number }; Returns: string
+                           },
 "revoke_role":
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
                            },
@@ -921,6 +994,12 @@ isOneToOne: false
                            },
 "set_payment_fee":
 { Args: { "p_bps": number,"p_fixed_cents": number,"p_method": string,"p_provider": string,"p_reason": string }; Returns: undefined
+                           },
+"set_payout_pix_key":
+{ Args: { "p_type": string,"p_value": string }; Returns: undefined
+                           },
+"settle_withdrawal":
+{ Args: { "p_fee_cents"?: number,"p_id": string,"p_reason"?: string,"p_status": string }; Returns: string
                            },
 "staff_can":
 { Args: { "permission": string }; Returns: boolean

@@ -41,3 +41,15 @@ export const SUBSCRIPTION_PRICE_MAX = 1000;
 
 export const formatPercent = (bps: number) =>
   `${(bps / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+
+export const WITHDRAWAL_STATUS: Record<
+  string,
+  { label: string; tone: "neutral" | "success" | "warning" | "danger" }
+> = {
+  requested: { label: "Aguardando aprovação", tone: "warning" },
+  processing: { label: "Enviando Pix", tone: "warning" },
+  paid: { label: "Pago", tone: "success" },
+  rejected: { label: "Recusado", tone: "danger" },
+  failed: { label: "Falhou", tone: "danger" },
+  canceled: { label: "Cancelado", tone: "neutral" },
+};

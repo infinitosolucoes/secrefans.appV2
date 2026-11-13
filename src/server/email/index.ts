@@ -74,6 +74,7 @@ const CTA: Record<string, string> = {
   renewal: "Ver extrato",
   payment_failed: "Assinar de novo",
   message: "Abrir conversa",
+  payout: "Ver recebimentos",
 };
 
 /**

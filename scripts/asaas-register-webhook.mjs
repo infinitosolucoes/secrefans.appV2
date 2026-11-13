@@ -20,7 +20,7 @@ const headers = { access_token: env.ASAAS_API_KEY, "Content-Type": "application/
 const url = `${baseUrl.replace(/\/$/, "")}/api/webhooks/asaas`;
 
 const body = {
-  name: "Secretfans - cobrancas",
+  name: "Secretfans - cobrancas e saques",
   url,
   email: "nao-responda@secretfans.app.br",
   enabled: true,
@@ -38,6 +38,13 @@ const body = {
     "PAYMENT_CHARGEBACK_REQUESTED",
     "PAYMENT_CHARGEBACK_DISPUTE",
     "PAYMENT_AWAITING_CHARGEBACK_REVERSAL",
+    "TRANSFER_CREATED",
+    "TRANSFER_PENDING",
+    "TRANSFER_IN_BANK_PROCESSING",
+    "TRANSFER_BLOCKED",
+    "TRANSFER_DONE",
+    "TRANSFER_FAILED",
+    "TRANSFER_CANCELLED",
   ],
 };
 

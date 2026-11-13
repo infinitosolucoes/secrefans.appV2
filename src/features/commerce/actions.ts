@@ -17,7 +17,12 @@ import {
 import { isValidCpf, last4, onlyDigits } from "@/lib/cpf";
 import { UUID_RE } from "@/features/content/constants";
 import { parsePriceToCents } from "@/features/content/schemas";
-import { CHECKOUT_KINDS, SUBSCRIPTION_PRICE_MAX, SUBSCRIPTION_PRICE_MIN } from "./constants";
+import {
+  CHECKOUT_KINDS,
+  SUBSCRIPTION_PRICE_MAX,
+  SUBSCRIPTION_PRICE_MIN,
+  TIP_OPTIONS,
+} from "./constants";
 
 export interface CheckoutResult {
   ok: boolean;
@@ -65,8 +70,14 @@ export async function startCheckoutAction(
 
   let amount: number | null = null;
   if (kind === "tip") {
-    const raw = fd.get("amount") === "outro" ? fd.get("customAmount") : fd.get("amount");
-    amount = parsePriceToCents(raw);
+    // Botões prontos enviam centavos (TIP_OPTIONS); "Outro valor" é digitado em reais.
+    const preset = Number(fd.get("amount"));
+    amount =
+      fd.get("amount") === "outro"
+        ? parsePriceToCents(fd.get("customAmount"))
+        : (TIP_OPTIONS as readonly number[]).includes(preset)
+          ? preset
+          : null;
     if (amount === null || Number.isNaN(amount) || amount < 500 || amount > 100000)
       return { ok: false, message: "Escolha um mimo entre R$ 5 e R$ 1.000." };
   }

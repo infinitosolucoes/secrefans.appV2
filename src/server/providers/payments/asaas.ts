@@ -93,6 +93,34 @@ export function normalizeAsaasStatus(p: Pick<AsaasPayment, "status" | "deleted">
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest();
 
+export interface AsaasTransfer {
+  id: string;
+  status: string;
+  value: number;
+  transferFee?: number | null;
+  failReason?: string | null;
+  externalReference?: string | null;
+}
+
+export type PixKeyType = "cpf" | "cnpj" | "email" | "phone" | "evp";
+
+/** Status final de uma transferência (DONE → paid; FAILED/CANCELLED → failed; demais: em andamento). */
+export function normalizeTransferStatus(
+  t: Pick<AsaasTransfer, "status">,
+): "paid" | "failed" | null {
+  if (t.status === "DONE") return "paid";
+  if (t.status === "FAILED" || t.status === "CANCELLED") return "failed";
+  return null;
+}
+
+/** Chave no formato aceito pelo Asaas (telefone sem o +55). */
+export function asaasPixKey(type: PixKeyType, value: string) {
+  return {
+    pixAddressKey: type === "phone" ? value.replace(/^\+55/, "") : value,
+    pixAddressKeyType: type.toUpperCase(),
+  };
+}
+
 export class AsaasPaymentProvider {
   readonly name = "asaas";
   private readonly base: string;
@@ -275,6 +303,47 @@ export class AsaasPaymentProvider {
       accountId: acc.id,
       walletId: acc.walletId,
       apiKey: acc.accessToken?.apiKey ?? acc.apiKey,
+    };
+  }
+
+  /** Pix da conta da plataforma para a chave do criador (saque). Não repete em caso de erro. */
+  async createPixTransfer(input: {
+    amountCents: number;
+    keyType: PixKeyType;
+    key: string;
+    externalReference: string;
+    description: string;
+  }): Promise<AsaasTransfer> {
+    return this.request<AsaasTransfer>("POST", "/transfers", {
+      value: input.amountCents / 100,
+      operationType: "PIX",
+      ...asaasPixKey(input.keyType, input.key),
+      description: input.description.slice(0, 140),
+      externalReference: input.externalReference,
+    });
+  }
+
+  async getTransfer(id: string): Promise<AsaasTransfer> {
+    return this.request<AsaasTransfer>("GET", `/transfers/${encodeURIComponent(id)}`);
+  }
+
+  /** Webhook de transferência: confere o token e reconsulta a transferência na API. */
+  async verifyTransferWebhook(headers: Headers, rawBody: string) {
+    if (!this.checkWebhookToken(headers)) throw new AsaasError("token do webhook inválido", 401);
+    let body: { event?: string; transfer?: { id?: string } };
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      throw new AsaasError("corpo inválido", 400);
+    }
+    if (!body.event?.startsWith("TRANSFER_") || !body.transfer?.id) {
+      throw new IgnoredEvent(body.event ?? "sem evento");
+    }
+    const t = await this.getTransfer(body.transfer.id);
+    return {
+      transfer: t,
+      status: normalizeTransferStatus(t),
+      feeCents: toCents(t.transferFee ?? 0),
     };
   }
 

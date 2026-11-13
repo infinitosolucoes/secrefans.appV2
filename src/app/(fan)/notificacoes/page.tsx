@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  Banknote,
   Bell,
   CreditCard,
   Crown,
@@ -32,6 +33,7 @@ const ICONS: Record<string, LucideIcon> = {
   message: MessageCircle,
   new_post: Sparkles,
   new_follower: UserPlus,
+  payout: Banknote,
 };
 
 export default async function Page() {

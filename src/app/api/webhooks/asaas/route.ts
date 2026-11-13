@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { dispatchPendingEmails } from "@/server/email";
+import { applyTransferWebhook } from "@/server/payouts";
 import { applyPaymentEvent, getAsaasProvider } from "@/server/providers/payments";
 import { AsaasError, IgnoredEvent } from "@/server/providers/payments/asaas";
 
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
     return new NextResponse(null, { status: 404 });
   }
   const raw = await request.text();
+  if (/"event"\s*:\s*"TRANSFER_/.test(raw)) return handleTransfer(provider, request, raw);
   let event;
   try {
     event = await provider.verifyWebhook(request.headers, raw);
@@ -36,6 +38,31 @@ export async function POST(request: Request) {
     // 1ª cobrança, então pede reenvio.
     if (String(e).includes("P0002") && !event.subscriptionId)
       return NextResponse.json({ ok: true, ignored: "sem pedido" });
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
+}
+
+/** Webhook de transferência (saque do criador): reconsulta na API e aplica o status. */
+async function handleTransfer(
+  provider: ReturnType<typeof getAsaasProvider>,
+  request: Request,
+  raw: string,
+) {
+  let verified;
+  try {
+    verified = await provider.verifyTransferWebhook(request.headers, raw);
+  } catch (e) {
+    if (e instanceof IgnoredEvent) return NextResponse.json({ ok: true, ignored: true });
+    if (e instanceof AsaasError && (e.status === 401 || e.status === 400))
+      return NextResponse.json({ ok: false }, { status: e.status });
+    return NextResponse.json({ ok: false }, { status: 503 });
+  }
+  if (!verified.status) return NextResponse.json({ ok: true, pending: true });
+  try {
+    const result = await applyTransferWebhook(verified.transfer);
+    after(() => dispatchPendingEmails().catch(() => undefined));
+    return NextResponse.json({ ok: true, result });
+  } catch {
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

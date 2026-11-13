@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ClipboardCheck,
   Flag,
+  Banknote,
   Landmark,
   LayoutDashboard,
   Percent,
@@ -43,6 +44,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       label: "Financeiro",
       icon: Landmark,
       show: hasPermission(user.roles, "finance.read"),
+    },
+    {
+      href: "/super-admin/saques",
+      label: "Saques",
+      icon: Banknote,
+      show: hasPermission(user.roles, "payout.manage"),
     },
     {
       href: "/super-admin/denuncias",

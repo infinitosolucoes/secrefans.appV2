@@ -1,12 +1,23 @@
 import type { Metadata } from "next";
-import { Landmark, Wallet } from "lucide-react";
+import { Banknote, Landmark, Wallet } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { Alert, Badge, PageHeader } from "@/components/ui";
+import { Alert, Badge, Button, PageHeader } from "@/components/ui";
+import { Table, Td, THead, Tr } from "@/components/ui/Table";
+import { maskPixKey, PIX_KEY_LABEL, type PixKeyTypeName } from "@/lib/pix";
+import { createServerSupabase } from "@/server/auth/supabase";
 import { formatDateTime } from "@/lib/format";
 import { requireRole } from "@/server/auth/session";
 import { activeProviderName } from "@/server/providers/payments";
 import { formatBRL } from "@/features/content/constants";
-import { getCreatorBalanceCents, getPayoutAccount } from "@/features/commerce/queries";
+import {
+  getPayoutAccount,
+  getPayoutSummary,
+  getPixKey,
+  getWithdrawals,
+} from "@/features/commerce/queries";
+import { WITHDRAWAL_STATUS } from "@/features/commerce/constants";
+import { cancelWithdrawalAction } from "@/features/commerce/withdrawal-actions";
+import { PixKeyForm, WithdrawalRequestForm } from "@/features/commerce/WithdrawalForms";
 import { LinkWalletForm, PayoutAccountForm } from "@/features/commerce/PayoutAccountForm";
 import { StudioTabs } from "@/features/commerce/StudioTabs";
 
@@ -21,10 +32,21 @@ const STATUS = {
 export default async function Page() {
   const user = await requireRole(["creator"], "/estudio/recebimentos");
   const provider = activeProviderName();
-  const [account, balance] = await Promise.all([
+  const supabase = await createServerSupabase();
+  const [account, summary, pixKey, withdrawals, { data: verification }] = await Promise.all([
     getPayoutAccount(user.id, "asaas"),
-    getCreatorBalanceCents(),
+    getPayoutSummary(),
+    getPixKey(user.id),
+    getWithdrawals(user.id),
+    supabase
+      .from("creator_verifications")
+      .select("status")
+      .eq("user_id", user.id)
+      .eq("status", "approved")
+      .maybeSingle(),
   ]);
+  const balance = summary.balance;
+  const open = withdrawals.find((w) => w.status === "requested" || w.status === "processing");
 
   return (
     <AppShell user={user} active="/estudio">
@@ -45,6 +67,104 @@ export default async function Page() {
             Vendas sem split, já descontados a comissão e a taxa. As vendas com split caem direto na
             sua conta Asaas e não entram aqui. Estornos e chargebacks são abatidos.
           </p>
+        </section>
+
+        <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface-alt p-5 md:p-6">
+          <h2 className="flex items-center gap-2 type-body-strong text-ink">
+            <Banknote className="size-5 text-accent" aria-hidden />
+            Sacar por Pix
+          </h2>
+          <dl className="grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "Disponível para saque", value: summary.available, strong: true },
+              { label: "Em liberação", value: summary.held },
+              { label: "Em saque", value: summary.reserved },
+            ].map((c) => (
+              <div key={c.label} className="rounded-md border border-border p-3">
+                <dt className="type-caption text-ink-muted">{c.label}</dt>
+                <dd
+                  className={
+                    c.strong
+                      ? "text-xl font-extrabold text-accent-text"
+                      : "text-lg font-bold text-ink"
+                  }
+                >
+                  {formatBRL(c.value)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="type-caption text-ink-muted">
+            Cada venda fica disponível {summary.holdDaysPix} dias depois do pagamento no Pix e{" "}
+            {summary.holdDaysCard} dias no cartão (prazo de recebimento e contestação). Saque mínimo
+            de {formatBRL(summary.min)}, sem custo para você.
+          </p>
+
+          {!verification ? (
+            <Alert tone="info">
+              Para sacar, conclua a verificação de identidade em Studio → Verificação.
+            </Alert>
+          ) : !pixKey ? (
+            <PixKeyForm hasKey={false} />
+          ) : (
+            <>
+              <p className="type-body text-ink">
+                Chave Pix: <strong>{PIX_KEY_LABEL[pixKey.key_type as PixKeyTypeName]}</strong>{" "}
+                {maskPixKey(pixKey.key_type, pixKey.key_value)}
+              </p>
+              {open ? (
+                <Alert tone="info">
+                  {open.status === "requested"
+                    ? `Saque de ${formatBRL(open.amount_cents)} solicitado. O financeiro confere e envia o Pix em até 2 dias úteis.`
+                    : `Saque de ${formatBRL(open.amount_cents)} aprovado: o Pix está sendo enviado.`}
+                </Alert>
+              ) : (
+                <WithdrawalRequestForm available={summary.available} min={summary.min} />
+              )}
+              {!open && (
+                <details className="rounded-md border border-border p-4">
+                  <summary className="cursor-pointer type-label font-semibold text-ink">
+                    Trocar chave Pix
+                  </summary>
+                  <div className="mt-4">
+                    <PixKeyForm hasKey />
+                  </div>
+                </details>
+              )}
+            </>
+          )}
+
+          {withdrawals.length > 0 && (
+            <Table caption="Seus saques">
+              <THead columns={["Pedido em", "Valor", "Situação", ""]} />
+              <tbody>
+                {withdrawals.map((w) => {
+                  const st = WITHDRAWAL_STATUS[w.status];
+                  const note = w.status === "rejected" ? w.decision_reason : w.failure_reason;
+                  return (
+                    <Tr key={w.id}>
+                      <Td>{formatDateTime(w.requested_at)}</Td>
+                      <Td>{formatBRL(w.amount_cents)}</Td>
+                      <Td>
+                        <Badge tone={st?.tone ?? "neutral"}>{st?.label ?? w.status}</Badge>
+                        {note && <span className="ml-2 type-caption text-ink-muted">{note}</span>}
+                      </Td>
+                      <Td>
+                        {w.status === "requested" && (
+                          <form action={cancelWithdrawalAction}>
+                            <input type="hidden" name="id" value={w.id} />
+                            <Button type="submit" variant="ghost" size="sm">
+                              Cancelar
+                            </Button>
+                          </form>
+                        )}
+                      </Td>
+                    </Tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          )}
         </section>
 
         <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface-alt p-5 md:p-6">
