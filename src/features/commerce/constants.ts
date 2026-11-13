@@ -62,3 +62,8 @@ export const PERIOD_LABEL: Record<number, string> = {
 };
 
 export const percentOff = (bps: number) => `${Math.round(bps / 100)}% off`;
+
+/** Mimo: limites em reais (o banco confere de novo: R$ 5 a R$ 1.000). */
+export const TIP_MIN_REAIS = 5;
+export const TIP_MAX_REAIS = 1000;
+export const TIP_STEP_REAIS = 5;

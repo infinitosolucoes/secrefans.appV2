@@ -10,6 +10,7 @@ import {
   getViewerSubscription,
 } from "@/features/commerce/queries";
 import { SubscriptionOffer } from "@/features/commerce/SubscriptionOffer";
+import { TipButton } from "@/features/commerce/TipModal";
 import { AppShell } from "@/components/layout/AppShell";
 import { Avatar } from "@/components/domain/Avatar";
 import { BrandArt, buttonClasses, EmptyState, LinkTabs } from "@/components/ui";
@@ -196,13 +197,26 @@ export default async function PublicProfile({
                     Mensagem
                   </Link>
                 )}
-                <Link
-                  href={checkoutHref("mimo", profile.id)}
-                  className={buttonClasses("primary", "md")}
-                >
-                  <Gift className="size-4" aria-hidden />
-                  Enviar mimo
-                </Link>
+                {user ? (
+                  <TipButton
+                    creator={{
+                      id: profile.id,
+                      name,
+                      handle: profile.handle,
+                      avatarPath: profile.avatar_path,
+                    }}
+                    label="Enviar mimo"
+                    className={buttonClasses("primary", "md")}
+                  />
+                ) : (
+                  <Link
+                    href={checkoutHref("mimo", profile.id)}
+                    className={buttonClasses("primary", "md")}
+                  >
+                    <Gift className="size-4" aria-hidden />
+                    Enviar mimo
+                  </Link>
+                )}
               </>
             )
           )}

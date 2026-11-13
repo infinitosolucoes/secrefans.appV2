@@ -16,6 +16,8 @@ import {
   simulatedPaymentsAllowed,
 } from "@/server/providers/payments";
 import { isValidCpf, last4, onlyDigits } from "@/lib/cpf";
+import { serverEnv } from "@/lib/env.server";
+import { hasPaymentCustomer } from "./queries";
 import { UUID_RE } from "@/features/content/constants";
 import { parsePriceToCents } from "@/features/content/schemas";
 import {
@@ -113,6 +115,13 @@ export async function startCheckoutAction(
           ? "Você já usou esta promoção."
           : (orderErrors[error?.code ?? ""] ?? "Não foi possível criar o pedido."),
     };
+
+  // Mimo com mensagem: fica no pedido e só chega ao chat do criador depois do pagamento.
+  const tipMessage = String(fd.get("message") ?? "").trim();
+  if (kind === "tip" && tipMessage) {
+    if (tipMessage.length > 500) return { ok: false, message: "Mensagem de até 500 caracteres." };
+    await supabase.rpc("set_tip_message", { p_order_id: orderId, p_message: tipMessage });
+  }
 
   const { data: order } = await supabase
     .from("orders")
@@ -365,4 +374,14 @@ export async function acceptCommissionAction(fd: FormData): Promise<void> {
   const supabase = await createServerSupabase();
   await supabase.rpc("accept_commission_rule", { p_rule_id: ruleId });
   revalidatePath("/estudio", "layout");
+}
+
+/** Contexto do modal de mimo: se precisa pedir CPF (1ª compra no Asaas) e o ambiente. */
+export async function getTipContextAction(): Promise<{ needsCpf: boolean; testMode: boolean }> {
+  const user = await requireUser("/inicio");
+  const provider = activeProviderName();
+  return {
+    needsCpf: provider === "asaas" && !(await hasPaymentCustomer(user.id, provider)),
+    testMode: provider !== "asaas" || serverEnv().ASAAS_ENV === "sandbox",
+  };
 }

@@ -3,6 +3,7 @@ import { BadgeCheck, Crown, Gift, Lock, MessageCircle } from "lucide-react";
 import { Avatar } from "@/components/domain/Avatar";
 import { Badge, buttonClasses } from "@/components/ui";
 import { checkoutHref } from "@/features/commerce/constants";
+import { TipButton } from "@/features/commerce/TipModal";
 import { cn } from "@/lib/cn";
 import { formatRelative } from "@/lib/format";
 import { formatBRL, formatDuration, formatMediaCount, VISIBILITY_LABEL } from "./constants";
@@ -164,16 +165,27 @@ export function PostCard({
             {post.commentCount}
           </span>
         )}
-        {canGift && (
-          <Link
-            href={checkoutHref("mimo", post.creatorId)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-pill px-3 type-label text-ink-muted hover:text-accent-text"
-            aria-label={`Enviar um mimo para ${name}`}
-          >
-            <Gift className="size-5" aria-hidden />
-            Mimo
-          </Link>
-        )}
+        {canGift &&
+          (loggedIn ? (
+            <TipButton
+              creator={{
+                id: post.creatorId,
+                name,
+                handle: post.handle,
+                avatarPath: post.avatarPath,
+              }}
+              className="inline-flex min-h-11 items-center gap-2 rounded-pill px-3 type-label text-ink-muted hover:text-accent-text"
+            />
+          ) : (
+            <Link
+              href={checkoutHref("mimo", post.creatorId)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-pill px-3 type-label text-ink-muted hover:text-accent-text"
+              aria-label={`Enviar um mimo para ${name}`}
+            >
+              <Gift className="size-5" aria-hidden />
+              Mimo
+            </Link>
+          ))}
         <span className="ml-auto">
           <ReportButton targetType="post" targetId={post.id} loggedIn={loggedIn} />
         </span>
