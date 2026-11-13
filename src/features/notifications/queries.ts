@@ -16,6 +16,7 @@ export interface NotificationPrefs {
   emailMessages: boolean;
   emailAccount: boolean;
   inappNewPosts: boolean;
+  inappEngagement: boolean;
 }
 
 export async function getNotifications(limit = 50): Promise<NotificationItem[]> {
@@ -49,7 +50,7 @@ export async function getNotificationPrefs(userId: string): Promise<Notification
   const supabase = await createServerSupabase();
   const { data } = await supabase
     .from("notification_prefs")
-    .select("email_sales, email_messages, email_account, inapp_new_posts")
+    .select("email_sales, email_messages, email_account, inapp_new_posts, inapp_engagement")
     .eq("user_id", userId)
     .maybeSingle();
   return {
@@ -57,5 +58,6 @@ export async function getNotificationPrefs(userId: string): Promise<Notification
     emailMessages: data?.email_messages ?? true,
     emailAccount: data?.email_account ?? true,
     inappNewPosts: data?.inapp_new_posts ?? true,
+    inappEngagement: data?.inapp_engagement ?? true,
   };
 }

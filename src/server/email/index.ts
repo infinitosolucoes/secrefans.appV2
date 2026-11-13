@@ -75,6 +75,8 @@ const CTA: Record<string, string> = {
   payment_failed: "Assinar de novo",
   message: "Abrir conversa",
   payout: "Abrir a Carteira",
+  verification: "Abrir o Studio",
+  subscription_expiring: "Assinar de novo",
 };
 
 /**

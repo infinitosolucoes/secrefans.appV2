@@ -27,11 +27,14 @@ export function NotificationPrefsForm({
         Novas mensagens (um aviso por conversa até você ler)
       </Checkbox>
       <Checkbox name="emailAccount" defaultChecked={prefs.emailAccount}>
-        Problemas com pagamento da assinatura
+        Problemas com pagamento e assinaturas perto de acabar
       </Checkbox>
       <p className="mt-2 type-label font-semibold text-ink">No site</p>
       <Checkbox name="inappNewPosts" defaultChecked={prefs.inappNewPosts}>
         Novos posts de criadores que eu assino
+      </Checkbox>
+      <Checkbox name="inappEngagement" defaultChecked={prefs.inappEngagement}>
+        Curtidas e comentários nas minhas publicações
       </Checkbox>
       <Button type="submit" size="sm" loading={pending} className="self-start">
         Salvar preferências

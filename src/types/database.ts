@@ -263,14 +263,14 @@ isOneToOne: false
                   ]
                 },"message_broadcasts": {
                   Row: {
-                    "body": string,"created_at": string,"creator_id": string,"id": string,"price_cents": number | null,"recipients": number
+                    "body": string,"content_attestation_version": string | null,"content_attested_at": string | null,"created_at": string,"creator_id": string,"id": string,"price_cents": number | null,"recipients": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "body"?: string,"created_at"?: string,"creator_id": string,"id": string,"price_cents"?: number | null,"recipients"?: number
+                    "body"?: string,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"created_at"?: string,"creator_id": string,"id": string,"price_cents"?: number | null,"recipients"?: number
                   }
                   Update: {
-                    "body"?: string,"created_at"?: string,"creator_id"?: string,"id"?: string,"price_cents"?: number | null,"recipients"?: number
+                    "body"?: string,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"created_at"?: string,"creator_id"?: string,"id"?: string,"price_cents"?: number | null,"recipients"?: number
                   }
                   Relationships: [
                     
@@ -297,14 +297,14 @@ isOneToOne: false
                   ]
                 },"messages": {
                   Row: {
-                    "body": string,"broadcast_id": string | null,"conversation_id": string,"created_at": string,"deleted_at": string | null,"id": string,"price_cents": number | null,"sender_id": string
+                    "body": string,"broadcast_id": string | null,"content_attestation_version": string | null,"content_attested_at": string | null,"conversation_id": string,"created_at": string,"deleted_at": string | null,"id": string,"price_cents": number | null,"sender_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "body"?: string,"broadcast_id"?: string | null,"conversation_id": string,"created_at"?: string,"deleted_at"?: string | null,"id": string,"price_cents"?: number | null,"sender_id": string
+                    "body"?: string,"broadcast_id"?: string | null,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"conversation_id": string,"created_at"?: string,"deleted_at"?: string | null,"id": string,"price_cents"?: number | null,"sender_id": string
                   }
                   Update: {
-                    "body"?: string,"broadcast_id"?: string | null,"conversation_id"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"price_cents"?: number | null,"sender_id"?: string
+                    "body"?: string,"broadcast_id"?: string | null,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"conversation_id"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"price_cents"?: number | null,"sender_id"?: string
                   }
                   Relationships: [
                     {
@@ -323,14 +323,14 @@ isOneToOne: false
                   ]
                 },"notification_prefs": {
                   Row: {
-                    "email_account": boolean,"email_messages": boolean,"email_sales": boolean,"inapp_new_posts": boolean,"updated_at": string,"user_id": string
+                    "email_account": boolean,"email_messages": boolean,"email_sales": boolean,"inapp_engagement": boolean,"inapp_new_posts": boolean,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "email_account"?: boolean,"email_messages"?: boolean,"email_sales"?: boolean,"inapp_new_posts"?: boolean,"updated_at"?: string,"user_id": string
+                    "email_account"?: boolean,"email_messages"?: boolean,"email_sales"?: boolean,"inapp_engagement"?: boolean,"inapp_new_posts"?: boolean,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "email_account"?: boolean,"email_messages"?: boolean,"email_sales"?: boolean,"inapp_new_posts"?: boolean,"updated_at"?: string,"user_id"?: string
+                    "email_account"?: boolean,"email_messages"?: boolean,"email_sales"?: boolean,"inapp_engagement"?: boolean,"inapp_new_posts"?: boolean,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -671,14 +671,14 @@ isOneToOne: false
                   ]
                 },"subscriptions": {
                   Row: {
-                    "cancel_at_period_end": boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id": string,"last_order_id": string | null,"price_cents": number,"provider": string | null,"provider_subscription_id": string | null,"started_at": string,"status": Database["public"]['Enums']["subscription_status"],"updated_at": string
+                    "cancel_at_period_end": boolean,"creator_id": string,"current_period_end": string,"expiry_notified_at": string | null,"fan_id": string,"id": string,"last_order_id": string | null,"price_cents": number,"provider": string | null,"provider_subscription_id": string | null,"started_at": string,"status": Database["public"]['Enums']["subscription_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "cancel_at_period_end"?: boolean,"creator_id": string,"current_period_end": string,"fan_id": string,"id"?: string,"last_order_id"?: string | null,"price_cents": number,"provider"?: string | null,"provider_subscription_id"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
+                    "cancel_at_period_end"?: boolean,"creator_id": string,"current_period_end": string,"expiry_notified_at"?: string | null,"fan_id": string,"id"?: string,"last_order_id"?: string | null,"price_cents": number,"provider"?: string | null,"provider_subscription_id"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
                   }
                   Update: {
-                    "cancel_at_period_end"?: boolean,"creator_id"?: string,"current_period_end"?: string,"fan_id"?: string,"id"?: string,"last_order_id"?: string | null,"price_cents"?: number,"provider"?: string | null,"provider_subscription_id"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
+                    "cancel_at_period_end"?: boolean,"creator_id"?: string,"current_period_end"?: string,"expiry_notified_at"?: string | null,"fan_id"?: string,"id"?: string,"last_order_id"?: string | null,"price_cents"?: number,"provider"?: string | null,"provider_subscription_id"?: string | null,"started_at"?: string,"status"?: Database["public"]['Enums']["subscription_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -943,6 +943,9 @@ isOneToOne: false
 "my_roles":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["app_role"][]
                            },
+"notify_expiring_subscriptions":
+{ Args: { "p_days"?: number }; Returns: number
+                           },
 "package_items_for":
 { Args: { "p_version_id": string }; Returns: {
               "duration_seconds": number,"height": number,"kind": string,"position": number,"poster_path": string,"storage_path": string,"width": number
@@ -978,16 +981,16 @@ isOneToOne: false
 { Args: { "p_attested"?: boolean,"p_audience": Database["public"]['Enums']["package_audience"],"p_category": string,"p_cover_path": string,"p_description": string,"p_items": Json,"p_package_id": string,"p_price_cents": number,"p_publish": boolean,"p_title": string }; Returns: number
                            },
 "send_broadcast":
-{ Args: { "p_body": string,"p_broadcast_id": string,"p_media"?: Json,"p_price_cents"?: number }; Returns: number
+{ Args: { "p_attested"?: boolean,"p_body": string,"p_broadcast_id": string,"p_media"?: Json,"p_price_cents"?: number }; Returns: number
                            },
 "send_message":
-{ Args: { "p_body": string,"p_conversation_id": string,"p_media"?: Json,"p_message_id": string,"p_price_cents"?: number }; Returns: string
+{ Args: { "p_attested"?: boolean,"p_body": string,"p_conversation_id": string,"p_media"?: Json,"p_message_id": string,"p_price_cents"?: number }; Returns: string
                            },
 "set_account_status":
 { Args: { "p_reason": string,"p_status": Database["public"]['Enums']["account_status"],"p_user_id": string }; Returns: undefined
                            },
 "set_notification_prefs":
-{ Args: { "p_email_account": boolean,"p_email_messages": boolean,"p_email_sales": boolean,"p_inapp_new_posts": boolean }; Returns: undefined
+{ Args: { "p_email_account": boolean,"p_email_messages": boolean,"p_email_sales": boolean,"p_inapp_engagement"?: boolean,"p_inapp_new_posts": boolean }; Returns: undefined
                            },
 "set_package_status":
 { Args: { "p_package_id": string,"p_status": Database["public"]['Enums']["package_status"] }; Returns: undefined

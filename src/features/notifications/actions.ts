@@ -23,6 +23,7 @@ export async function saveNotificationPrefsAction(
     p_email_messages: on("emailMessages"),
     p_email_account: on("emailAccount"),
     p_inapp_new_posts: on("inappNewPosts"),
+    p_inapp_engagement: on("inappEngagement"),
   });
   if (error) return { ok: false, message: "Não foi possível salvar." };
   revalidatePath("/notificacoes");

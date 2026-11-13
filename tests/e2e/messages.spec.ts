@@ -70,9 +70,11 @@ test("fã abre conversa pelo perfil e envia mensagem", async ({ page }) => {
   await page.getByRole("button", { name: "Mensagem" }).click();
   await page.waitForURL(/\/mensagens\/[0-9a-f-]{36}$/);
   await page.getByRole("textbox", { name: "Mensagem" }).fill("Oi! Adoro seu conteúdo");
+  await page.getByRole("button", { name: "Inserir emoji" }).click();
+  await page.getByRole("button", { name: "Emoji 🔥" }).click();
   await page.getByRole("button", { name: "Enviar", exact: true }).click();
   await expect(
-    page.getByRole("list", { name: "Mensagens da conversa" }).getByText("Oi! Adoro seu conteúdo"),
+    page.getByRole("list", { name: "Mensagens da conversa" }).getByText("Oi! Adoro seu conteúdo🔥"),
   ).toBeVisible();
 });
 
@@ -90,6 +92,10 @@ test("criador vê a não lida e responde com mensagem paga (foto)", async ({ pag
   await page.getByRole("button", { name: "Cobrar para ver" }).click();
   await page.getByLabel(/Preço para desbloquear/).fill("9,90");
   await page.getByRole("textbox", { name: "Mensagem" }).fill("Exclusivo pra você");
+  // Sem a declaração de direitos e consentimento a mídia não sai.
+  await page.getByRole("button", { name: "Enviar", exact: true }).click();
+  await expect(page.getByText(/marque a declaração de direitos/)).toBeVisible();
+  await page.getByLabel(/Declaro que tenho os direitos/).check();
   await page.getByRole("button", { name: "Enviar", exact: true }).click();
   await expect(page.getByText("Mensagem paga · R$ 9,90")).toBeVisible();
 });

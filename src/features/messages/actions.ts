@@ -52,6 +52,7 @@ const sendSchema = z.object({
   body: z.string().max(2000),
   priceCents: z.number().int().min(500).max(100000).nullable(),
   media: mediaSchema,
+  attested: z.boolean().default(false),
 });
 
 export async function sendMessageAction(input: unknown): Promise<ChatResult> {
@@ -68,6 +69,7 @@ export async function sendMessageAction(input: unknown): Promise<ChatResult> {
     p_body: d.body,
     p_price_cents: d.priceCents as number,
     p_media: d.media,
+    p_attested: d.attested,
   });
   if (error) return { ok: false, message: errors[error.code ?? ""] ?? "Não foi possível enviar." };
   after(() => dispatchPendingEmails().catch(() => undefined));
@@ -81,6 +83,7 @@ const broadcastSchema = z.object({
   body: z.string().max(2000),
   priceCents: z.number().int().min(500).max(100000).nullable(),
   media: mediaSchema,
+  attested: z.boolean().default(false),
 });
 
 export async function sendBroadcastAction(
@@ -96,6 +99,7 @@ export async function sendBroadcastAction(
     p_body: d.body,
     p_price_cents: d.priceCents as number,
     p_media: d.media,
+    p_attested: d.attested,
   });
   if (error)
     return {

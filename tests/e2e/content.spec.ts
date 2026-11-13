@@ -127,8 +127,10 @@ test("fã segue, vê no feed, curte, comenta e denuncia", async ({ page }) => {
 
   await card.getByRole("link", { name: /comentários/ }).click();
   await page.getByLabel("Escreva um comentário").fill("Que foto linda!");
+  await page.getByRole("button", { name: "Inserir emoji" }).click();
+  await page.getByRole("button", { name: "Emoji 😍" }).click();
   await page.getByRole("button", { name: "Comentar" }).click();
-  await expect(page.getByText("Que foto linda!")).toBeVisible();
+  await expect(page.getByText("Que foto linda!😍")).toBeVisible();
 
   await page.goto("/inicio");
   const ppvCard = page.locator("article", { hasText: PPV_TEXT });

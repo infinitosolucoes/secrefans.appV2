@@ -12,6 +12,7 @@ import {
   uploadMedia,
   type UploadedMedia,
 } from "@/features/content/upload";
+import { EmojiPicker, insertAt } from "@/components/ui/EmojiPicker";
 import { sendBroadcastAction, sendMessageAction } from "./actions";
 
 const MAX_FILES = 10;
@@ -36,10 +37,27 @@ export function MessageComposer({
   const [files, setFiles] = useState<File[]>([]);
   const [paid, setPaid] = useState(false);
   const [price, setPrice] = useState("");
+  const [attested, setAttested] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const addEmoji = (emoji: string) => {
+    const el = textRef.current;
+    const next = insertAt(
+      body,
+      emoji,
+      el?.selectionStart ?? body.length,
+      el?.selectionEnd ?? body.length,
+    );
+    if (next.value.length > 2000) return;
+    setBody(next.value);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(next.cursor, next.cursor);
+    });
+  };
   // Só habilita o envio depois que o React assumir a página (antes disso o clique não enviaria).
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -61,6 +79,10 @@ export function MessageComposer({
     setError(null);
     setNotice(null);
     if (!body.trim() && files.length === 0) return;
+    if (files.length > 0 && !attested)
+      return setError(
+        "Para enviar fotos ou vídeos, marque a declaração de direitos e consentimento.",
+      );
     let priceCents: number | null = null;
     if (paid) {
       priceCents = parsePriceToCents(price);
@@ -90,13 +112,14 @@ export function MessageComposer({
       }));
       const result =
         mode === "broadcast"
-          ? await sendBroadcastAction({ broadcastId: originId, body, priceCents, media })
+          ? await sendBroadcastAction({ broadcastId: originId, body, priceCents, media, attested })
           : await sendMessageAction({
               messageId: originId,
               conversationId,
               body,
               priceCents,
               media,
+              attested,
             });
       if (!result.ok) {
         await removeUploaded(uploaded);
@@ -105,6 +128,7 @@ export function MessageComposer({
       }
       setBody("");
       setFiles([]);
+      setAttested(false);
       setPaid(false);
       setPrice("");
       if (result.message) setNotice(result.message);
@@ -123,6 +147,7 @@ export function MessageComposer({
       {error && <Alert tone="error">{error}</Alert>}
       {notice && <Alert tone="success">{notice}</Alert>}
       <Textarea
+        ref={textRef}
         id="mensagem"
         aria-label="Mensagem"
         value={body}
@@ -159,6 +184,18 @@ export function MessageComposer({
           ))}
         </ul>
       )}
+      {files.length > 0 && (
+        <label className="flex items-start gap-2 type-caption text-ink-muted">
+          <input
+            type="checkbox"
+            checked={attested}
+            onChange={(e) => setAttested(e.target.checked)}
+            className="mt-0.5 accent-[var(--rosa-neon)]"
+          />
+          Declaro que tenho os direitos sobre este conteúdo e que todas as pessoas que aparecem nele
+          são maiores de 18 anos e consentiram com a gravação e a publicação.
+        </label>
+      )}
       {canAttach && paid && (
         <div className="max-w-xs">
           <Label htmlFor="preco" hint="R$ 5 a R$ 1.000">
@@ -174,6 +211,7 @@ export function MessageComposer({
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2">
+        <EmojiPicker onPick={addEmoji} />
         {canAttach && (
           <>
             <input

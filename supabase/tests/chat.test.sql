@@ -2,7 +2,7 @@
 -- Usuários do seed.sql: fan ...001, criador ...002, moderador ...003.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(29);
 
 create or replace function pg_temp.as_user(uid uuid, aal text default 'aal1') returns void language plpgsql as $$
 begin
@@ -80,10 +80,14 @@ select throws_ok(
   $$ select public.send_message((select v from ids where k = 'ppv'), (select v from ids where k = 'conv'), 'exclusivo', 1990,
        jsonb_build_array(jsonb_build_object('kind','image','path','00000000-0000-4000-a000-000000000002/outra-pasta/x.webp'))) $$,
   '22023', null, 'caminho de mídia fora da pasta da mensagem é recusado');
-select lives_ok(
+select throws_ok(
   $$ select public.send_message((select v from ids where k = 'ppv'), (select v from ids where k = 'conv'), 'Exclusivo pra você', 1990,
        jsonb_build_array(jsonb_build_object('kind','image','path','00000000-0000-4000-a000-000000000002/messages/aaaaaaaa-0000-4000-a000-000000000001/bbbbbbbb-0000-4000-a000-000000000001.webp','width',800,'height',600))) $$,
-  'criador envia mensagem paga com foto');
+  '22023', null, 'mídia no chat sem a declaração do criador é recusada');
+select lives_ok(
+  $$ select public.send_message((select v from ids where k = 'ppv'), (select v from ids where k = 'conv'), 'Exclusivo pra você', 1990,
+       jsonb_build_array(jsonb_build_object('kind','image','path','00000000-0000-4000-a000-000000000002/messages/aaaaaaaa-0000-4000-a000-000000000001/bbbbbbbb-0000-4000-a000-000000000001.webp','width',800,'height',600)), true) $$,
+  'criador envia mensagem paga com foto (com a declaração)');
 select is((select count(*)::int from public.message_media_for((select v from ids where k = 'ppv'))), 1,
   'criador vê a própria mídia');
 select lives_ok($$ select public.mark_conversation_read((select v from ids where k = 'conv')) $$, 'criador marca como lida');

@@ -3,6 +3,10 @@ import Link from "next/link";
 import {
   Banknote,
   Bell,
+  CalendarClock,
+  Heart,
+  MessageSquare,
+  ShieldCheck,
   CreditCard,
   Crown,
   Gift,
@@ -34,6 +38,10 @@ const ICONS: Record<string, LucideIcon> = {
   new_post: Sparkles,
   new_follower: UserPlus,
   payout: Banknote,
+  like: Heart,
+  comment: MessageSquare,
+  verification: ShieldCheck,
+  subscription_expiring: CalendarClock,
 };
 
 export default async function Page() {
