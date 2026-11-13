@@ -27,12 +27,13 @@ export async function login(page: Page, email: string, password = PASSWORD) {
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Senha", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();
-  await page.waitForURL(/\/(inicio|estudio|super-admin)/);
+  await page.waitForURL(/\/(inicio|estudio|super-admin|entrar\/codigo)/);
 }
 
 export async function passMfa(page: Page) {
   await page.goto("/super-admin");
-  await page.waitForURL("**/super-admin/mfa");
+  // Quem já tem o autenticador cai no código do login; quem não tem, no cadastro do admin.
+  await page.waitForURL(/\/(super-admin\/mfa|entrar\/codigo)/);
   const code = new TOTP({ secret: SEED_TOTP_SECRET }).generate();
   await page.getByLabel("Código de 6 dígitos").fill(code);
   await page.getByRole("button", { name: "Verificar" }).click();

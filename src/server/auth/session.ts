@@ -72,6 +72,9 @@ export async function requireUser(next?: string): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect(next ? `/entrar?next=${encodeURIComponent(next)}` : "/entrar");
   if (user.status !== "active") redirect("/conta-suspensa");
+  // Quem ativou a verificação em duas etapas precisa digitar o código a cada login.
+  if (user.hasMfaFactor && user.aal !== "aal2")
+    redirect(next ? `/entrar/codigo?next=${encodeURIComponent(next)}` : "/entrar/codigo");
   return user;
 }
 

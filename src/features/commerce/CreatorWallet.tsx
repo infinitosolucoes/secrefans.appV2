@@ -16,7 +16,7 @@ import { PixKeyForm, WithdrawalRequestForm } from "./WithdrawalForms";
 const holdText = (days: number) => (days > 0 ? `${days} dias depois do pagamento` : "na hora");
 
 /** Carteira do criador: saldo a receber pela Secretfans, chave Pix e saques. */
-export async function CreatorWallet({ userId }: { userId: string }) {
+export async function CreatorWallet({ userId, mfa }: { userId: string; mfa: boolean }) {
   const supabase = await createServerSupabase();
   const [summary, pixKey, withdrawals, { data: verification }] = await Promise.all([
     getPayoutSummary(),
@@ -79,6 +79,15 @@ export async function CreatorWallet({ userId }: { userId: string }) {
           mínimo de {formatBRL(summary.min)}, sem custo para você.
         </p>
 
+        {!mfa && (
+          <Alert tone="info">
+            Proteja seus saques: ative a{" "}
+            <Link href="/conta/seguranca" className="font-semibold underline">
+              verificação em duas etapas
+            </Link>
+            .
+          </Alert>
+        )}
         {!verification ? (
           <Alert tone="info">
             Para sacar, conclua a verificação de identidade.{" "}

@@ -7,7 +7,17 @@ import { browserSupabase } from "@/lib/supabase-browser";
 
 type Enrollment = { factorId: string; qr: string; secret: string };
 
-export function MfaPanel({ hasFactor }: { hasFactor: boolean }) {
+/**
+ * Cadastro (QR + código) ou desafio do autenticador TOTP. Depois de verificar, vai para `next`.
+ * Usado pela equipe (/super-admin/mfa), no login de quem ativou o MFA e em Conta → Segurança.
+ */
+export function MfaPanel({
+  hasFactor,
+  next = "/super-admin",
+}: {
+  hasFactor: boolean;
+  next?: string;
+}) {
   const router = useRouter();
   const [factorId, setFactorId] = useState<string | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
@@ -51,7 +61,7 @@ export function MfaPanel({ hasFactor }: { hasFactor: boolean }) {
     });
     setPending(false);
     if (verifyError) return setError("Código inválido ou expirado. Tente novamente.");
-    router.replace("/super-admin");
+    router.replace(next);
     router.refresh();
   }
 

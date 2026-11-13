@@ -39,7 +39,7 @@ export default async function Page() {
       />
       {isCreator && (
         <div className="mb-10 flex max-w-3xl flex-col gap-5">
-          <CreatorWallet userId={user.id} />
+          <CreatorWallet userId={user.id} mfa={user.hasMfaFactor} />
         </div>
       )}
       {isCreator && <h2 className="mb-3 type-body-strong text-ink">Minhas compras</h2>}

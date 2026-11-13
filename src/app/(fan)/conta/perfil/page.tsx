@@ -28,9 +28,14 @@ export default async function Page() {
         title="Meu perfil"
         description="Estas informações aparecem no seu perfil público."
         actions={
-          <Link href={`/${user.handle}`} className="type-label text-accent-text hover:underline">
-            Ver perfil público →
-          </Link>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/conta/seguranca" className="type-label text-accent-text hover:underline">
+              Segurança da conta
+            </Link>
+            <Link href={`/${user.handle}`} className="type-label text-accent-text hover:underline">
+              Ver perfil público →
+            </Link>
+          </div>
         }
       />
       <div className="flex flex-col gap-12">

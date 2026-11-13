@@ -31,7 +31,7 @@ test("criador envia verificação → moderador com MFA aprova → papel creator
   const mod = await modCtx.newPage();
   await login(mod, USERS.moderator.email);
   await mod.goto("/super-admin/verificacoes");
-  await mod.waitForURL("**/super-admin/mfa");
+  await mod.waitForURL(/\/(super-admin\/mfa|entrar\/codigo)/);
   await passMfa(mod);
   await mod.goto("/super-admin/verificacoes");
   await mod.getByRole("link", { name: /Criador Teste da Silva/ }).click();
