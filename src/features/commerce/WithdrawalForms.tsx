@@ -67,8 +67,10 @@ export function PixKeyForm({ hasKey, sandbox = false }: { hasKey: boolean; sandb
 /** Pedido de saque (valor livre entre o mínimo e o disponível). */
 export function WithdrawalRequestForm({ available, min }: { available: number; min: number }) {
   const [state, action, pending] = useActionState(requestWithdrawalAction, null);
+  // Controlado: depois de um erro o campo mantém o valor digitado (o React limpa o formulário
+  // após a ação; sem isso ele voltaria para o saldo total).
+  const [amount, setAmount] = useState(() => (available / 100).toFixed(2).replace(".", ","));
   if (state?.ok) return <Alert tone="success">{state.message}</Alert>;
-  const fmt = (c: number) => (c / 100).toFixed(2).replace(".", ",");
   return (
     <form action={action} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <div className="flex-1">
@@ -81,7 +83,8 @@ export function WithdrawalRequestForm({ available, min }: { available: number; m
           name="amount"
           label={`Valor do saque (mínimo ${formatBRL(min)})`}
           inputMode="decimal"
-          defaultValue={fmt(available)}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
           required
         />
       </div>
