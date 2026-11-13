@@ -302,3 +302,41 @@ export async function getWithdrawals(creatorId: string, limit = 20) {
     .limit(limit);
   return data ?? [];
 }
+
+export interface SubscriptionOption {
+  months: number;
+  regularCents: number;
+  monthlyCents: number;
+  planDiscountBps: number;
+  promo: {
+    id: string;
+    priceCents: number;
+    discountBps: number;
+    message: string;
+    endsAt: string;
+    left: number | null;
+  } | null;
+}
+
+/** Planos do criador (mensal + trimestral/semestral/anual ativos) e a promoção em vigor. */
+export async function getSubscriptionOptions(creatorId: string): Promise<SubscriptionOption[]> {
+  const supabase = await createServerSupabase();
+  const { data } = await supabase.rpc("creator_subscription_options", { p_creator: creatorId });
+  return (data ?? []).map((o) => ({
+    months: o.months,
+    regularCents: o.regular_cents,
+    monthlyCents: o.monthly_cents,
+    planDiscountBps: o.plan_discount_bps,
+    promo:
+      o.promo_id && o.promo_cents != null
+        ? {
+            id: o.promo_id,
+            priceCents: o.promo_cents,
+            discountBps: o.promo_discount_bps ?? 0,
+            message: o.promo_message ?? "",
+            endsAt: o.promo_ends_at ?? "",
+            left: o.promo_left,
+          }
+        : null,
+  }));
+}

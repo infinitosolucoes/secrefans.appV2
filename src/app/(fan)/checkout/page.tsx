@@ -8,7 +8,14 @@ import { requireUser } from "@/server/auth/session";
 import { formatBRL, UUID_RE } from "@/features/content/constants";
 import { CheckoutForm } from "@/features/commerce/CheckoutForm";
 import { CHECKOUT_KINDS, type CheckoutSlug } from "@/features/commerce/constants";
-import { getCheckoutItem, hasPaymentCustomer } from "@/features/commerce/queries";
+import {
+  getCheckoutItem,
+  getSubscriptionOptions,
+  hasPaymentCustomer,
+  type SubscriptionOption,
+} from "@/features/commerce/queries";
+import type { PlanChoice } from "@/features/commerce/CheckoutForm";
+import { PERIOD_LABEL, percentOff } from "@/features/commerce/constants";
 import { serverEnv } from "@/lib/env.server";
 import { activeProviderName } from "@/server/providers/payments";
 
@@ -17,9 +24,9 @@ export const metadata: Metadata = { title: "Finalizar compra", robots: { index: 
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string; id?: string }>;
+  searchParams: Promise<{ tipo?: string; id?: string; plano?: string }>;
 }) {
-  const { tipo = "", id = "" } = await searchParams;
+  const { tipo = "", id = "", plano } = await searchParams;
   const user = await requireUser(
     `/checkout?tipo=${encodeURIComponent(tipo)}&id=${encodeURIComponent(id)}`,
   );
@@ -29,6 +36,8 @@ export default async function Page({
   if (!item) notFound();
   const provider = activeProviderName();
   const needsCpf = provider === "asaas" && !(await hasPaymentCustomer(user.id, provider));
+  const plans =
+    item.kind === "subscription" ? planChoices(await getSubscriptionOptions(id)) : undefined;
 
   return (
     <AppShell user={user}>
@@ -50,7 +59,14 @@ export default async function Page({
             </Alert>
           ) : (
             <section className="rounded-lg border border-border bg-surface-alt p-5 md:p-6">
-              <CheckoutForm slug={slug} id={id} priceCents={item.priceCents} needsCpf={needsCpf} />
+              <CheckoutForm
+                slug={slug}
+                id={id}
+                priceCents={item.priceCents}
+                needsCpf={needsCpf}
+                plans={plans}
+                defaultPlan={plano}
+              />
             </section>
           )}
           {provider === "simulado" ? (
@@ -91,7 +107,8 @@ export default async function Page({
           <p className="flex gap-2 type-caption text-ink-muted">
             <Lock className="size-4 shrink-0" aria-hidden />
             Preço congelado neste pedido.
-            {item.kind === "subscription" && " Renovação mensal; cancele quando quiser."}
+            {item.kind === "subscription" &&
+              " A assinatura renova no fim de cada período pelo preço normal; cancele quando quiser."}
           </p>
           {item.blocked && (
             <Link
@@ -105,4 +122,32 @@ export default async function Page({
       </div>
     </AppShell>
   );
+}
+
+/** Opções do seletor: cada plano e, se houver, a versão com promoção (só no 1º período). */
+function planChoices(options: SubscriptionOption[]): PlanChoice[] {
+  const per = (m: number) => (m === 1 ? "mês" : `${m} meses`);
+  return options.flatMap((o) => {
+    const regular: PlanChoice = {
+      value: `${o.months}:0`,
+      label: PERIOD_LABEL[o.months] ?? `${o.months} meses`,
+      priceCents: o.regularCents,
+      note:
+        o.months === 1
+          ? "Renova todo mês"
+          : `Equivale a ${formatBRL(Math.round(o.regularCents / o.months))}/mês · renova a cada ${per(o.months)}`,
+      badge: o.planDiscountBps > 0 ? percentOff(o.planDiscountBps) : undefined,
+    };
+    if (!o.promo) return [regular];
+    const promo: PlanChoice = {
+      value: `${o.months}:1`,
+      label: `${PERIOD_LABEL[o.months] ?? `${o.months} meses`} em promoção`,
+      priceCents: o.promo.priceCents,
+      note: `1º ${per(o.months)} por ${formatBRL(o.promo.priceCents)}; depois ${formatBRL(o.regularCents)}${
+        o.promo.left != null ? ` · ${o.promo.left} vaga(s)` : ""
+      }`,
+      badge: percentOff(o.promo.discountBps),
+    };
+    return [promo, regular];
+  });
 }

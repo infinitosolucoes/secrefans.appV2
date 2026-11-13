@@ -10,6 +10,7 @@ import {
 import { normalizeAsaasStatus, splitTotalCents } from "@/server/providers/payments/asaas";
 import { dispatchPendingEmails } from "@/server/email";
 import { reconcileWithdrawals } from "@/server/payouts";
+import { reconcilePromotionalSubscriptions } from "@/server/subscriptions";
 
 export const maxDuration = 60;
 
@@ -82,9 +83,13 @@ export async function GET(request: Request) {
     }
   }
   const withdrawals = await reconcileWithdrawals().catch(() => ({ checked: 0, settled: 0 }));
+  const promotions = await reconcilePromotionalSubscriptions().catch(() => ({
+    checked: 0,
+    synced: 0,
+  }));
   // Avisa (site e e-mail) quem tem assinatura que não renova sozinha e acaba em até 3 dias.
   const { data: expiring } = await db.rpc("notify_expiring_subscriptions", { p_days: 3 });
   // Fila de e-mails de notificação que ficou para trás (ex.: envio em massa grande).
   const emails = await dispatchPendingEmails(200).catch(() => ({ sent: 0, failed: 0 }));
-  return NextResponse.json({ ok: true, ...summary, withdrawals, expiring, emails });
+  return NextResponse.json({ ok: true, ...summary, withdrawals, promotions, expiring, emails });
 }

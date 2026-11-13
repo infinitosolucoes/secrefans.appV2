@@ -86,22 +86,39 @@ export async function startCheckoutAction(
   }
 
   const supabase = await createServerSupabase();
-  const { data: orderId, error } = await supabase.rpc("create_order", {
-    p_kind: kind,
-    p_target_id: d.id,
-    p_amount_cents: amount as number,
-    p_method: d.method,
-    p_idempotency_key: d.idempotencyKey,
-  });
+  // Assinatura: plano escolhido ("meses:promo", ex. "3:0" ou "1:1"); o preço sai do banco.
+  const plan = /^(1|3|6|12):([01])$/.exec(String(fd.get("plano") ?? "1:0"));
+  const { data: orderId, error } =
+    kind === "subscription"
+      ? await supabase.rpc("create_subscription_order", {
+          p_creator_id: d.id,
+          p_months: Number(plan?.[1] ?? 1),
+          p_use_promotion: plan?.[2] === "1",
+          p_method: d.method,
+          p_idempotency_key: d.idempotencyKey,
+        })
+      : await supabase.rpc("create_order", {
+          p_kind: kind,
+          p_target_id: d.id,
+          p_amount_cents: amount as number,
+          p_method: d.method,
+          p_idempotency_key: d.idempotencyKey,
+        });
   if (error || !orderId)
     return {
       ok: false,
-      message: orderErrors[error?.code ?? ""] ?? "Não foi possível criar o pedido.",
+      message: /promoção encerrada/.test(error?.message ?? "")
+        ? "Esta promoção acabou. Escolha outro plano."
+        : /já usou esta promoção/.test(error?.message ?? "")
+          ? "Você já usou esta promoção."
+          : (orderErrors[error?.code ?? ""] ?? "Não foi possível criar o pedido."),
     };
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, gross_cents, buyer_id, creator_id, kind, description, method, provider_ref")
+    .select(
+      "id, gross_cents, buyer_id, creator_id, kind, description, method, provider_ref, period_months",
+    )
     .eq("id", orderId)
     .single();
   if (!order) return { ok: false, message: "Pedido não encontrado." };
@@ -124,6 +141,7 @@ interface PendingOrder {
   kind: string;
   description: string;
   method: string;
+  period_months: number;
 }
 
 async function chargeSimulated(order: PendingOrder): Promise<CheckoutResult> {
@@ -230,6 +248,7 @@ async function chargeWithAsaas(order: PendingOrder, cpfInput: FormDataEntryValue
     method: order.method as "pix" | "card",
     description: `Secretfans · ${order.description}`,
     split,
+    periodMonths: order.period_months,
   };
   try {
     if (order.kind === "subscription") {

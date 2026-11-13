@@ -121,6 +121,17 @@ export function asaasPixKey(type: PixKeyType, value: string) {
   };
 }
 
+/** Ciclo do Asaas para o período do plano. */
+export function asaasCycle(months: number) {
+  return months === 12
+    ? "YEARLY"
+    : months === 6
+      ? "SEMIANNUALLY"
+      : months === 3
+        ? "QUARTERLY"
+        : "MONTHLY";
+}
+
 export class AsaasPaymentProvider {
   readonly name = "asaas";
   private readonly base: string;
@@ -247,13 +258,15 @@ export class AsaasPaymentProvider {
     method: "pix" | "card";
     description: string;
     split?: SplitTarget;
+    /** Período do plano em meses (1, 3, 6 ou 12). */
+    periodMonths?: number;
   }): Promise<{ subscriptionId: string; charge: ProviderChargeResult }> {
     const sub = await this.request<{ id: string }>("POST", "/subscriptions", {
       customer: input.customerId,
       billingType: input.method === "pix" ? "PIX" : "CREDIT_CARD",
       value: toReais(input.amount),
       nextDueDate: todayInSaoPaulo(),
-      cycle: "MONTHLY",
+      cycle: asaasCycle(input.periodMonths ?? 1),
       description: input.description.slice(0, 500),
       externalReference: input.orderId,
       split: this.splitBody(input.split),
@@ -265,6 +278,28 @@ export class AsaasPaymentProvider {
     const first = list.data?.[0];
     if (!first) throw new AsaasError("Assinatura sem a primeira cobrança", 502);
     return { subscriptionId: sub.id, charge: await this.withPix(first) };
+  }
+
+  /**
+   * Novo valor das próximas cobranças (fim da promoção do 1º período). Não mexe nas cobranças
+   * já geradas. O split acompanha o novo líquido do criador.
+   */
+  async updateSubscriptionValue(
+    subscriptionId: string,
+    amountCents: number,
+    split?: SplitTarget,
+  ): Promise<void> {
+    await this.request("PUT", `/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+      value: toReais(amountCents),
+      updatePendingPayments: false,
+      ...(split ? { split: this.splitBody(split) } : {}),
+    });
+  }
+
+  async getSubscription(
+    subscriptionId: string,
+  ): Promise<{ id: string; value: number; status: string }> {
+    return this.request("GET", `/subscriptions/${encodeURIComponent(subscriptionId)}`);
   }
 
   async cancelSubscription(subscriptionId: string): Promise<void> {

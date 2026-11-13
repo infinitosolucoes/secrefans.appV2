@@ -72,5 +72,18 @@ export async function applyPaymentEvent(event: VerifiedProviderEvent): Promise<s
     ...(event.splitCents ? { p_split_cents: event.splitCents } : {}),
   });
   if (error) throw new Error(`confirm_payment: ${error.code ?? "erro"}`);
+  // 1ª cobrança de uma promoção paga: a assinatura no provedor volta ao preço normal.
+  if (data === "paid" && event.provider === "asaas" && event.subscriptionId) {
+    const { data: o } = await db
+      .from("orders")
+      .select("id, promotion_id")
+      .eq("provider", event.provider)
+      .eq("provider_ref", event.chargeId)
+      .maybeSingle();
+    if (o?.promotion_id) {
+      const { syncPromotionalSubscription } = await import("@/server/subscriptions");
+      await syncPromotionalSubscription(o.id).catch(() => undefined); // a conciliação refaz
+    }
+  }
   return data ?? "ignored";
 }

@@ -53,3 +53,12 @@ export const WITHDRAWAL_STATUS: Record<
   failed: { label: "Falhou", tone: "danger" },
   canceled: { label: "Cancelado", tone: "neutral" },
 };
+
+export const PERIOD_LABEL: Record<number, string> = {
+  1: "Mensal",
+  3: "3 meses",
+  6: "6 meses",
+  12: "12 meses",
+};
+
+export const percentOff = (bps: number) => `${Math.round(bps / 100)}% off`;

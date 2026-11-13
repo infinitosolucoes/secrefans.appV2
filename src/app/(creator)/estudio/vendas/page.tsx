@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
-import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui";
+import { Alert, Badge, buttonClasses, EmptyState, PageHeader } from "@/components/ui";
 import { Table, Td, THead, Tr } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
 import { requireRole } from "@/server/auth/session";
@@ -16,12 +16,28 @@ import {
 } from "@/features/commerce/constants";
 import { StudioTabs } from "@/features/commerce/StudioTabs";
 import { SubscriptionPriceForm } from "@/features/commerce/SubscriptionPriceForm";
+import { PlansForm, PromotionForm } from "@/features/commerce/PlanForms";
+import { endPromotionAction } from "@/features/commerce/plan-actions";
+import { PERIOD_LABEL } from "@/features/commerce/constants";
 
 export const metadata: Metadata = { title: "Vendas · Studio" };
 
 export default async function Page() {
   const user = await requireRole(["creator"], "/estudio/vendas");
   const supabase = await createServerSupabase();
+  const [{ data: plans }, { data: promo }] = await Promise.all([
+    supabase
+      .from("subscription_plans")
+      .select("months, discount_bps, active")
+      .eq("creator_id", user.id),
+    supabase
+      .from("subscription_promotions")
+      .select("months, discount_bps, message, ends_at, max_redemptions, redemptions")
+      .eq("creator_id", user.id)
+      .is("ended_at", null)
+      .gt("ends_at", new Date().toISOString())
+      .maybeSingle(),
+  ]);
   const [{ data: profile }, { data: orders }, { data: subs }, { data: accepted }] =
     await Promise.all([
       supabase.from("profiles").select("subscription_price_cents").eq("id", user.id).single(),
@@ -114,6 +130,61 @@ export default async function Page() {
         </p>
         <SubscriptionPriceForm priceCents={profile?.subscription_price_cents ?? null} />
       </section>
+
+      {profile?.subscription_price_cents ? (
+        <div className="mb-8 grid max-w-5xl gap-6 lg:grid-cols-2">
+          <section
+            className="rounded-lg border border-border bg-surface-alt p-5 md:p-6"
+            aria-labelledby="planos"
+          >
+            <h2 id="planos" className="mb-1 type-feature-title text-ink">
+              Planos com desconto
+            </h2>
+            <p className="mb-4 type-caption text-ink-muted">
+              Ofereça 3, 6 ou 12 meses com desconto sobre o mensal. O fã paga o período de uma vez.
+            </p>
+            <PlansForm
+              monthlyCents={profile.subscription_price_cents}
+              plans={(plans ?? []).map((p) => ({
+                months: p.months,
+                active: p.active,
+                discountBps: p.discount_bps,
+              }))}
+            />
+          </section>
+          <section
+            className="rounded-lg border border-border bg-surface-alt p-5 md:p-6"
+            aria-labelledby="promocao"
+          >
+            <h2 id="promocao" className="mb-1 type-feature-title text-ink">
+              Promoção
+            </h2>
+            {promo ? (
+              <div className="flex flex-col gap-3">
+                <p className="type-body text-ink">
+                  <strong>{Math.round(promo.discount_bps / 100)}% off</strong> no{" "}
+                  {PERIOD_LABEL[promo.months]?.toLowerCase()} até {formatDateTime(promo.ends_at)}
+                  {promo.max_redemptions != null &&
+                    ` · ${promo.redemptions} de ${promo.max_redemptions} vagas usadas`}
+                  {promo.max_redemptions == null && ` · ${promo.redemptions} assinante(s)`}
+                </p>
+                {promo.message && (
+                  <p className="type-caption text-ink-muted">&ldquo;{promo.message}&rdquo;</p>
+                )}
+                <form action={endPromotionAction}>
+                  <button type="submit" className={buttonClasses("secondary", "sm")}>
+                    Encerrar promoção
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <PromotionForm
+                periods={[1, ...(plans ?? []).filter((p) => p.active).map((p) => p.months)]}
+              />
+            )}
+          </section>
+        </div>
+      ) : null}
 
       <h2 className="mb-4 type-heading text-ink">Vendas recentes</h2>
       {(orders ?? []).length === 0 ? (
