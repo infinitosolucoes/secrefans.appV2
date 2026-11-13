@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Banknote, Landmark, Wallet } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Alert, Badge, Button, PageHeader } from "@/components/ui";
@@ -102,7 +103,10 @@ export default async function Page() {
 
           {!verification ? (
             <Alert tone="info">
-              Para sacar, conclua a verificação de identidade em Studio → Verificação.
+              Para sacar, conclua a verificação de identidade.{" "}
+              <Link href="/estudio/verificacao" className="font-semibold underline">
+                Fazer a verificação
+              </Link>
             </Alert>
           ) : !pixKey ? (
             <PixKeyForm hasKey={false} />

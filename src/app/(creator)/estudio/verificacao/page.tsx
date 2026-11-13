@@ -51,7 +51,7 @@ export default async function Page() {
           )}
           {latest.status === "approved" && (
             <p className="mt-3 type-body text-ink-muted">
-              Tudo certo! A publicação de conteúdo chega na próxima etapa da plataforma.
+              Tudo certo! Você já pode publicar, vender e sacar seus ganhos.
             </p>
           )}
           {latest.status === "rejected" && <AppealForm verificationId={latest.id} />}
