@@ -13,3 +13,14 @@ A intenção é usar Asaas (cobranças, split, subcontas BaaS, transferências).
 
 ## Consequências
 - Nada de cobrança real antes do go/no-go financeiro e jurídico.
+
+## Atualização (13/11/2026): implementação em sandbox
+- `AsaasPaymentProvider` implementado e em uso na homologação (`ASAAS_ENV=sandbox`): cliente com
+  CPF/CNPJ só no Asaas, Pix com QR, cartão na página segura do Asaas, assinatura mensal,
+  estorno, split para a carteira do criador (conta própria ou subconta), transferências Pix.
+- O provedor `simulado` continua para desenvolvimento e testes; produção o bloqueia
+  (`APP_STAGE=producao`).
+- Ledger e pedidos: [ADR 0004](0004-ledger-e-pedidos.md). Saques: [ADR 0005](0005-saques.md).
+- A condição desta decisão continua valendo: **cobrança real só com a aprovação escrita do
+  Asaas para o segmento +18** (ou outro provedor elegível). Checklist em
+  [docs/runbooks/go-live.md](../runbooks/go-live.md).
