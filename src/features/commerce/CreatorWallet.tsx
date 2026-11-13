@@ -98,7 +98,8 @@ export async function CreatorWallet({ userId }: { userId: string }) {
               <Alert tone="info">
                 {open.status === "requested"
                   ? `Saque de ${formatBRL(open.amount_cents)} solicitado. O financeiro confere e envia o Pix em até 2 dias úteis.`
-                  : `Saque de ${formatBRL(open.amount_cents)} aprovado: o Pix está sendo enviado.`}
+                  : `Saque de ${formatBRL(open.amount_cents)} aprovado: o Pix está sendo enviado.`}{" "}
+                A chave Pix só pode ser trocada depois que este saque terminar.
               </Alert>
             ) : (
               <WithdrawalRequestForm available={summary.available} min={summary.min} />
