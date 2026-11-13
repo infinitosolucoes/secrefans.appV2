@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge, EmptyState, PageHeader } from "@/components/ui";
 import { Table, Td, THead, Tr } from "@/components/ui/Table";
@@ -9,13 +8,14 @@ import { requireUser } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { formatBRL } from "@/features/content/constants";
 import { ORDER_KIND_LABEL, ORDER_STATUS } from "@/features/commerce/constants";
+import { CreatorWallet } from "@/features/commerce/CreatorWallet";
 
 export const metadata: Metadata = { title: "Carteira" };
 
-/** Carteira: o criador vai para Recebimentos (saldo e saques); o fã vê as próprias compras. */
+/** Carteira: criador vê saldo, chave Pix e saques; todos veem as próprias compras. */
 export default async function Page() {
   const user = await requireUser("/carteira");
-  if (user.roles.includes("creator")) redirect("/estudio/recebimentos");
+  const isCreator = user.roles.includes("creator");
   const supabase = await createServerSupabase();
   const { data: orders } = await supabase
     .from("orders")
@@ -30,9 +30,19 @@ export default async function Page() {
     <AppShell user={user} active="/carteira">
       <PageHeader
         eyebrow="Carteira"
-        title="Minhas compras"
-        description="Assinaturas, conteúdos, mimos e mensagens pagas. Cada compra é paga direto por Pix ou cartão."
+        title={isCreator ? "Carteira" : "Minhas compras"}
+        description={
+          isCreator
+            ? "Seu saldo na Secretfans, saques por Pix e as suas compras."
+            : "Assinaturas, conteúdos, mimos e mensagens pagas. Cada compra é paga direto por Pix ou cartão."
+        }
       />
+      {isCreator && (
+        <div className="mb-10 flex max-w-3xl flex-col gap-5">
+          <CreatorWallet userId={user.id} />
+        </div>
+      )}
+      {isCreator && <h2 className="mb-3 type-body-strong text-ink">Minhas compras</h2>}
       <p className="mb-6 type-body text-ink-muted">
         Total confirmado: <strong className="text-ink">{formatBRL(total)}</strong> em {paid.length}{" "}
         compra(s).

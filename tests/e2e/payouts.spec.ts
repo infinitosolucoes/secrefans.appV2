@@ -21,6 +21,7 @@ test.beforeAll(async () => {
     await db.from("withdrawals").delete().in("id", ids);
   }
   await db.from("creator_pix_keys").delete().eq("creator_id", USERS.creator.id);
+  await db.from("notifications").delete().eq("user_id", USERS.creator.id).eq("kind", "payout");
   await db
     .from("user_roles")
     .upsert(
@@ -65,7 +66,7 @@ test("fã manda mimo de R$ 50 e a venda fica liberada para saque", async ({ page
 
 test("criador cadastra a chave Pix e pede o saque", async ({ page }) => {
   await login(page, USERS.creator.email);
-  await page.goto("/estudio/recebimentos");
+  await page.goto("/carteira");
   await page.getByLabel("Tipo de chave").selectOption("email");
   await page.getByRole("textbox", { name: "Chave Pix" }).fill("criador@secretfans.test");
   await page.getByLabel(/Confirmo que esta chave Pix/).check();
@@ -94,7 +95,7 @@ test("financeiro aprova e o Pix é enviado", async ({ page }) => {
 
 test("criador vê o saque pago e a notificação", async ({ page }) => {
   await login(page, USERS.creator.email);
-  await page.goto("/estudio/recebimentos");
+  await page.goto("/carteira");
   await expect(
     page.getByRole("table", { name: "Seus saques" }).getByText("Pago", { exact: true }),
   ).toBeVisible();
