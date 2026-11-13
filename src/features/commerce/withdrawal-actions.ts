@@ -1,5 +1,6 @@
 "use server";
 
+import { checkUserRateLimit } from "@/server/security/rateLimit";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -55,7 +56,9 @@ export async function requestWithdrawalAction(
   _: WithdrawalResult | null,
   fd: FormData,
 ): Promise<WithdrawalResult> {
-  await requireRole(["creator"], "/carteira");
+  const user = await requireRole(["creator"], "/carteira");
+  const limited = await checkUserRateLimit("withdrawal", user.id);
+  if (limited) return { ok: false, message: limited };
   const cents = parsePriceToCents(String(fd.get("amount") ?? ""));
   if (!cents) return { ok: false, message: "Informe o valor do saque." };
   const supabase = await createServerSupabase();

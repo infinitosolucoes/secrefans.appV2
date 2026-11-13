@@ -50,6 +50,7 @@ const schema = (userId: string) =>
       audience: z.enum(["all", "subscribers"]),
       coverPath: z.string().nullable(),
       publish: z.boolean(),
+      attested: z.boolean().default(false),
       items: z
         .array(
           z.object({
@@ -97,6 +98,7 @@ export async function savePackageAction(input: unknown): Promise<PackageResult> 
     p_cover_path: d.coverPath as string,
     p_items: d.items,
     p_publish: d.publish,
+    p_attested: d.attested,
   });
   if (error)
     return {

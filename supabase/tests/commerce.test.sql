@@ -28,9 +28,9 @@ delete from public.posts where creator_id = '00000000-0000-4000-a000-00000000000
 delete from public.user_blocks;
 insert into public.user_roles (user_id, role) values ('00000000-0000-4000-a000-000000000002', 'creator') on conflict do nothing;
 update public.profiles set subscription_price_cents = 2990 where id = '00000000-0000-4000-a000-000000000002';
-insert into public.posts (id, creator_id, body, visibility, price_cents, status) values
-  ('66666666-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 'ppv', 'ppv', 1990, 'published'),
-  ('66666666-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000002', 'assinantes', 'subscribers', null, 'published');
+insert into public.posts (id, creator_id, body, visibility, price_cents, status, content_attested_at) values
+  ('66666666-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 'ppv', 'ppv', 1990, 'published', now()),
+  ('66666666-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000002', 'assinantes', 'subscribers', null, 'published', now());
 insert into public.post_media (post_id, creator_id, storage_path) values
   ('66666666-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002',
    '00000000-0000-4000-a000-000000000002/66666666-0000-4000-a000-000000000001/77777777-0000-4000-a000-000000000001.webp'),

@@ -32,6 +32,7 @@ import { MediaPicker, type PickedFile } from "@/features/content/MediaPicker";
 import { removeUploaded, uploadMedia, type UploadedMedia } from "@/features/content/upload";
 import { CATEGORIES } from "@/features/discovery/categories";
 import { savePackageAction, type PackageResult } from "./actions";
+import { ATTESTATION_REQUIRED, ContentAttestation } from "@/features/content/ContentAttestation";
 import type { EditorItem } from "./queries";
 
 export interface PackageEditorInitial {
@@ -101,6 +102,11 @@ export function PackageEditor({
 
   async function submit(publish: boolean, form: HTMLFormElement) {
     const fd = new FormData(form);
+    const attested = fd.get("attest") === "on";
+    if (publish && !attested) {
+      setState({ ok: false, message: ATTESTATION_REQUIRED });
+      return;
+    }
     setPending(true);
     setState(null);
     const uploaded: UploadedMedia[] = [];
@@ -121,6 +127,7 @@ export function PackageEditor({
         audience,
         coverPath,
         publish,
+        attested,
         items: [
           ...existing.map((i) => ({
             kind: i.kind,
@@ -388,6 +395,8 @@ export function PackageEditor({
           </div>
         </section>
       </div>
+
+      <ContentAttestation />
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" value="publish" loading={pending}>

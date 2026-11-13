@@ -78,6 +78,7 @@ test("criador cria, publica e versiona um pacote", async ({ page }) => {
   if (mp4) files.push({ name: "video.mp4", mimeType: "video/mp4", buffer: mp4 });
   await page.locator('input[type="file"][multiple]').setInputFiles(files);
   await page.getByLabel("Preço do pacote (R$)").fill("49,90");
+  await page.getByLabel(/Declaro que tenho os direitos/).check();
   await page.getByRole("button", { name: "Publicar pacote" }).click();
   await page.waitForURL("**/estudio/pacotes?salvo=publicado");
   const row = page.getByRole("row", { name: new RegExp(TITLE) });
@@ -89,6 +90,7 @@ test("criador cria, publica e versiona um pacote", async ({ page }) => {
   await row.getByRole("link", { name: "Editar" }).click();
   await expect(page.getByText("Alterar um pacote publicado cria uma nova versão")).toBeVisible();
   await page.getByLabel("Título").fill(TITLE_V2);
+  await page.getByLabel(/Declaro que tenho os direitos/).check();
   await page.getByRole("button", { name: "Publicar nova versão" }).click();
   await page.waitForURL("**/estudio/pacotes?salvo=publicado");
   await expect(page.getByRole("row", { name: new RegExp(TITLE_V2) })).toContainText("v2");

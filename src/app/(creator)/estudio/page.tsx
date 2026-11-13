@@ -58,7 +58,7 @@ export default async function Page({
     supabase
       .from("posts")
       .select(
-        "id, body, visibility, price_cents, status, published_at, created_at, removed_reason, post_media(count)",
+        "id, body, visibility, price_cents, status, published_at, created_at, removed_reason, content_attested_at, post_media(count)",
       )
       .eq("creator_id", user.id)
       .order("created_at", { ascending: false })
@@ -170,9 +170,18 @@ export default async function Page({
                       )}
                       {status === "draft" && (
                         <>
-                          <form action={setPostStatusAction}>
+                          <form
+                            action={setPostStatusAction}
+                            className="flex flex-wrap items-center gap-2"
+                          >
                             <input type="hidden" name="postId" value={p.id} />
                             <input type="hidden" name="status" value="published" />
+                            {!p.content_attested_at && (
+                              <label className="flex max-w-56 items-start gap-1.5 type-caption text-ink-muted">
+                                <input type="checkbox" name="attest" required className="mt-0.5" />
+                                Tenho os direitos e todos que aparecem são +18 e consentiram.
+                              </label>
+                            )}
                             <button type="submit" className={buttonClasses("primary", "sm")}>
                               Publicar
                             </button>

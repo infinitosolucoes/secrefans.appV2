@@ -1,5 +1,6 @@
 "use server";
 
+import { checkUserRateLimit } from "@/server/security/rateLimit";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
@@ -54,7 +55,9 @@ const sendSchema = z.object({
 });
 
 export async function sendMessageAction(input: unknown): Promise<ChatResult> {
-  await requireUser("/mensagens");
+  const me = await requireUser("/mensagens");
+  const limited = await checkUserRateLimit("message", me.id);
+  if (limited) return { ok: false, message: limited };
   const parsed = sendSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: "Mensagem inválida." };
   const d = parsed.data;

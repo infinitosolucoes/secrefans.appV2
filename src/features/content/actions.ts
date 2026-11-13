@@ -31,6 +31,8 @@ export async function savePostAction(input: unknown): Promise<ActionResult> {
     visibility: d.visibility,
     price_cents: d.visibility === "ppv" ? d.priceCents : null,
     status: d.publish ? "published" : "draft",
+    // O banco troca pelo horário do servidor; publicar sem declarar é recusado lá também.
+    content_attested_at: d.attested ? new Date().toISOString() : null,
   });
   if (error) return fail("Não foi possível salvar a publicação. Tente novamente.");
 
@@ -75,7 +77,13 @@ export async function setPostStatusAction(fd: FormData): Promise<void> {
   const status = String(fd.get("status") ?? "");
   if (!UUID_RE.test(id) || (status !== "published" && status !== "draft")) return;
   const supabase = await createServerSupabase();
-  await supabase.from("posts").update({ status }).eq("id", id).eq("creator_id", user.id);
+  // Publicar um rascunho ainda sem declaração exige marcar a declaração (o banco confere).
+  const attest = status === "published" && fd.get("attest") === "on";
+  await supabase
+    .from("posts")
+    .update(attest ? { status, content_attested_at: new Date().toISOString() } : { status })
+    .eq("id", id)
+    .eq("creator_id", user.id);
   revalidatePath("/estudio");
   revalidatePath(`/${user.handle}`);
 }

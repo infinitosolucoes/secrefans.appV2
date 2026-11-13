@@ -1,5 +1,6 @@
 "use server";
 
+import { checkUserRateLimit } from "@/server/security/rateLimit";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
@@ -55,7 +56,9 @@ export async function startCheckoutAction(
   _: CheckoutResult | null,
   fd: FormData,
 ): Promise<CheckoutResult> {
-  await requireUser("/biblioteca");
+  const buyer = await requireUser("/biblioteca");
+  const limited = await checkUserRateLimit("checkout", buyer.id);
+  if (limited) return { ok: false, message: limited };
   const parsed = checkoutSchema.safeParse({
     tipo: fd.get("tipo"),
     id: fd.get("id"),

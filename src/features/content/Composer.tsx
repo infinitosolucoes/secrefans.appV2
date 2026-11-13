@@ -13,6 +13,7 @@ import {
 } from "./constants";
 import { parsePriceToCents } from "./schemas";
 import { savePostAction, type ActionResult } from "./actions";
+import { ATTESTATION_REQUIRED, ContentAttestation } from "./ContentAttestation";
 import { MediaPicker, type PickedFile } from "./MediaPicker";
 import { removeUploaded, uploadMedia, type UploadedMedia } from "./upload";
 
@@ -30,6 +31,11 @@ export function Composer({ userId }: { userId: string }) {
     const fd = new FormData(form);
     const body = String(fd.get("body") ?? "");
     const priceCents = visibility === "ppv" ? parsePriceToCents(fd.get("price")) : null;
+    const attested = fd.get("attest") === "on";
+    if (publish && !attested) {
+      setState({ ok: false, message: ATTESTATION_REQUIRED });
+      return;
+    }
     setPending(true);
     setState(null);
     const uploaded: UploadedMedia[] = [];
@@ -47,6 +53,7 @@ export function Composer({ userId }: { userId: string }) {
         visibility,
         priceCents: priceCents === null ? null : Number.isNaN(priceCents) ? -1 : priceCents,
         publish,
+        attested,
         media: uploaded,
       });
       setState(result);
@@ -153,6 +160,8 @@ export function Composer({ userId }: { userId: string }) {
           <FieldError id="price-erro" message={e.price} />
         </div>
       )}
+
+      <ContentAttestation />
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" value="publish" loading={pending}>

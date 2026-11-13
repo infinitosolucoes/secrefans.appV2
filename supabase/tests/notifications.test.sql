@@ -86,8 +86,8 @@ select is((select count(*)::int from public.notifications where kind = 'message'
 -- Novo post → assinante ativo; seguidor → criador -------------------------------------------
 insert into public.subscriptions (fan_id, creator_id, price_cents, status, current_period_end)
 values ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 2990, 'active', now() + interval '10 days');
-insert into public.posts (id, creator_id, body, visibility, status)
-values ('77777777-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 'Post novo!', 'free', 'published');
+insert into public.posts (id, creator_id, body, visibility, status, content_attested_at)
+values ('77777777-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 'Post novo!', 'free', 'published', now());
 select is((select count(*)::int from public.notifications where kind = 'new_post' and user_id = '00000000-0000-4000-a000-000000000001'), 1,
   'novo post notifica o assinante');
 select is((select email_status from public.notifications where kind = 'new_post'), 'none', 'novo post é só no site');

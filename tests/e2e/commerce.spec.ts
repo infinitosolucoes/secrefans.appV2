@@ -57,6 +57,7 @@ test.beforeAll(async () => {
       visibility: "ppv",
       price_cents: 1990,
       status: "published",
+      content_attested_at: new Date().toISOString(),
     },
     {
       id: SUB_ID,
@@ -64,6 +65,7 @@ test.beforeAll(async () => {
       body: "Só para assinantes S4",
       visibility: "subscribers",
       status: "published",
+      content_attested_at: new Date().toISOString(),
     },
   ]);
   for (const id of [PPV_ID, SUB_ID]) {

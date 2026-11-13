@@ -30,6 +30,7 @@ export const postInputSchema = (userId: string) =>
       visibility: z.enum(["free", "subscribers", "ppv"]),
       priceCents: z.number().int().nullable(),
       publish: z.boolean(),
+      attested: z.boolean().default(false),
       media: z
         .array(
           z.object({

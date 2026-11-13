@@ -39,6 +39,7 @@ test("criador publica post grátis e PPV com foto", async ({ page }) => {
     await expect(page.getByAltText("Foto 1 selecionada")).toBeVisible();
     await page.getByText(visibility, { exact: true }).click();
     if (visibility === "PPV") await page.getByLabel("Preço (R$)").fill("19,90");
+    await page.getByLabel(/Declaro que tenho os direitos/).check();
     await page.getByRole("button", { name: "Publicar" }).click();
     await page.waitForURL("**/estudio?salvo=1");
     await expect(page.getByText(text)).toBeVisible();

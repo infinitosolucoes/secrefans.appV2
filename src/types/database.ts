@@ -403,14 +403,14 @@ isOneToOne: false
                   ]
                 },"package_versions": {
                   Row: {
-                    "audience": Database["public"]['Enums']["package_audience"],"category": string | null,"cover_path": string | null,"created_at": string,"description": string,"id": string,"package_id": string,"price_cents": number,"published_at": string | null,"status": Database["public"]['Enums']["package_version_status"],"title": string,"version": number
+                    "audience": Database["public"]['Enums']["package_audience"],"category": string | null,"content_attestation_version": string | null,"content_attested_at": string | null,"cover_path": string | null,"created_at": string,"description": string,"id": string,"package_id": string,"price_cents": number,"published_at": string | null,"status": Database["public"]['Enums']["package_version_status"],"title": string,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "audience"?: Database["public"]['Enums']["package_audience"],"category"?: string | null,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"package_id": string,"price_cents": number,"published_at"?: string | null,"status"?: Database["public"]['Enums']["package_version_status"],"title": string,"version": number
+                    "audience"?: Database["public"]['Enums']["package_audience"],"category"?: string | null,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"package_id": string,"price_cents": number,"published_at"?: string | null,"status"?: Database["public"]['Enums']["package_version_status"],"title": string,"version": number
                   }
                   Update: {
-                    "audience"?: Database["public"]['Enums']["package_audience"],"category"?: string | null,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"package_id"?: string,"price_cents"?: number,"published_at"?: string | null,"status"?: Database["public"]['Enums']["package_version_status"],"title"?: string,"version"?: number
+                    "audience"?: Database["public"]['Enums']["package_audience"],"category"?: string | null,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"cover_path"?: string | null,"created_at"?: string,"description"?: string,"id"?: string,"package_id"?: string,"price_cents"?: number,"published_at"?: string | null,"status"?: Database["public"]['Enums']["package_version_status"],"title"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -609,14 +609,14 @@ isOneToOne: false
                   ]
                 },"posts": {
                   Row: {
-                    "body": string,"created_at": string,"creator_id": string,"id": string,"price_cents": number | null,"published_at": string | null,"removed_reason": string | null,"status": Database["public"]['Enums']["post_status"],"updated_at": string,"visibility": Database["public"]['Enums']["post_visibility"]
+                    "body": string,"content_attestation_version": string | null,"content_attested_at": string | null,"created_at": string,"creator_id": string,"id": string,"price_cents": number | null,"published_at": string | null,"removed_reason": string | null,"status": Database["public"]['Enums']["post_status"],"updated_at": string,"visibility": Database["public"]['Enums']["post_visibility"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "body"?: string,"created_at"?: string,"creator_id": string,"id"?: string,"price_cents"?: number | null,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["post_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["post_visibility"]
+                    "body"?: string,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"created_at"?: string,"creator_id": string,"id"?: string,"price_cents"?: number | null,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["post_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["post_visibility"]
                   }
                   Update: {
-                    "body"?: string,"created_at"?: string,"creator_id"?: string,"id"?: string,"price_cents"?: number | null,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["post_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["post_visibility"]
+                    "body"?: string,"content_attestation_version"?: string | null,"content_attested_at"?: string | null,"created_at"?: string,"creator_id"?: string,"id"?: string,"price_cents"?: number | null,"published_at"?: string | null,"removed_reason"?: string | null,"status"?: Database["public"]['Enums']["post_status"],"updated_at"?: string,"visibility"?: Database["public"]['Enums']["post_visibility"]
                   }
                   Relationships: [
                     
@@ -975,7 +975,7 @@ isOneToOne: false
 { Args: { "p_reason": string,"p_role": Database["public"]['Enums']["app_role"],"p_user_id": string }; Returns: boolean
                            },
 "save_package":
-{ Args: { "p_audience": Database["public"]['Enums']["package_audience"],"p_category": string,"p_cover_path": string,"p_description": string,"p_items": Json,"p_package_id": string,"p_price_cents": number,"p_publish": boolean,"p_title": string }; Returns: number
+{ Args: { "p_attested"?: boolean,"p_audience": Database["public"]['Enums']["package_audience"],"p_category": string,"p_cover_path": string,"p_description": string,"p_items": Json,"p_package_id": string,"p_price_cents": number,"p_publish": boolean,"p_title": string }; Returns: number
                            },
 "send_broadcast":
 { Args: { "p_body": string,"p_broadcast_id": string,"p_media"?: Json,"p_price_cents"?: number }; Returns: number
@@ -1009,6 +1009,9 @@ isOneToOne: false
                            },
 "submit_creator_verification":
 { Args: { "p_birth_date": string,"p_depicted_consent": boolean,"p_document_back_path": string,"p_document_front_path": string,"p_legal_name": string,"p_rights_consent": boolean,"p_selfie_path": string }; Returns: string
+                           },
+"update_platform_setting":
+{ Args: { "p_key": string,"p_reason": string,"p_value": Json }; Returns: undefined
                            }
           }
           Enums: {

@@ -29,7 +29,7 @@ grant select on t_items to authenticated, anon;
 -- Fã não cria pacote ------------------------------------------------------------
 select pg_temp.as_user('00000000-0000-4000-a000-000000000001');
 select throws_ok(
-  $$ select public.save_package('44444444-0000-4000-a000-000000000009', 'Pacote do fã', '', null, 4990, 'all', null, (select items from t_items), true) $$,
+  $$ select public.save_package('44444444-0000-4000-a000-000000000009', 'Pacote do fã', '', null, 4990, 'all', null, (select items from t_items), true, true) $$,
   '42501', null, 'fã sem papel creator não cria pacote');
 reset role;
 
@@ -44,7 +44,7 @@ select is((select count(*)::int from public.public_packages where id = '44444444
 reset role;
 select pg_temp.as_user('00000000-0000-4000-a000-000000000002');
 select is(public.save_package('44444444-0000-4000-a000-000000000001', 'Ensaio Neon', 'desc', 'lifestyle', 4990, 'all', null,
-          (select items from t_items), true), 1, 'publicar o rascunho mantém a versão 1');
+          (select items from t_items), true, true), 1, 'publicar o rascunho mantém a versão 1');
 select throws_ok(
   $$ select public.save_package('44444444-0000-4000-a000-000000000002', 'Caminho alheio', '', null, 4990, 'all', null,
        '[{"kind":"image","path":"00000000-0000-4000-a000-000000000001/packages/44444444-0000-4000-a000-000000000002/55555555-0000-4000-a000-000000000009.webp"}]'::jsonb, false) $$,
@@ -81,7 +81,7 @@ select is((select title from public.public_packages where id = '44444444-0000-40
 reset role;
 select pg_temp.as_user('00000000-0000-4000-a000-000000000002');
 select is(public.save_package('44444444-0000-4000-a000-000000000001', 'Ensaio Neon v2', 'desc', 'lifestyle', 5990, 'all', null,
-          (select items from t_items), true), 2, 'publica a versão 2');
+          (select items from t_items), true, true), 2, 'publica a versão 2');
 select is((select status::text from public.package_versions where package_id = '44444444-0000-4000-a000-000000000001' and version = 1),
   'superseded', 'versão 1 fica preservada como substituída');
 select throws_ok(

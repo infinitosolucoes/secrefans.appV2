@@ -24,10 +24,10 @@ delete from public.user_blocks;
 -- Fixtures (como postgres): criador aprovado, um post grátis, um PPV e um rascunho com mídia.
 insert into public.user_roles (user_id, role) values ('00000000-0000-4000-a000-000000000002', 'creator')
 on conflict do nothing;
-insert into public.posts (id, creator_id, body, visibility, price_cents, status) values
-  ('22222222-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 'post grátis', 'free', null, 'published'),
-  ('22222222-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000002', 'post ppv', 'ppv', 1990, 'published'),
-  ('22222222-0000-4000-a000-000000000003', '00000000-0000-4000-a000-000000000002', 'rascunho', 'free', null, 'draft');
+insert into public.posts (id, creator_id, body, visibility, price_cents, status, content_attested_at) values
+  ('22222222-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 'post grátis', 'free', null, 'published', now()),
+  ('22222222-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000002', 'post ppv', 'ppv', 1990, 'published', now()),
+  ('22222222-0000-4000-a000-000000000003', '00000000-0000-4000-a000-000000000002', 'rascunho', 'free', null, 'draft', now());
 insert into public.post_media (post_id, creator_id, storage_path) values
   ('22222222-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002',
    '00000000-0000-4000-a000-000000000002/22222222-0000-4000-a000-000000000001/33333333-0000-4000-a000-000000000001.webp'),
@@ -64,7 +64,7 @@ select is((select count(*)::int from storage.objects where bucket_id = 'post-med
 select is((select count(*)::int from public.post_media_for('22222222-0000-4000-a000-000000000002')), 0,
   'fã sem compra não recebe mídia PPV');
 select throws_ok(
-  $$ insert into public.posts (creator_id, body, status) values ('00000000-0000-4000-a000-000000000001', 'x', 'published') $$,
+  $$ insert into public.posts (creator_id, body, status, content_attested_at) values ('00000000-0000-4000-a000-000000000001', 'x', 'published', now()) $$,
   '42501', null, 'fã sem papel creator não publica');
 select throws_ok(
   $$ insert into storage.objects (bucket_id, name) values ('post-media', '00000000-0000-4000-a000-000000000001/x/y.webp') $$,

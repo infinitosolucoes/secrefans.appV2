@@ -30,8 +30,8 @@ insert into public.creator_commission_acceptances (creator_id, rule_id)
   select '00000000-0000-4000-a000-000000000002', id from public.commission_rules where version = 1
   on conflict do nothing;
 update public.profiles set subscription_price_cents = 2990 where id = '00000000-0000-4000-a000-000000000002';
-insert into public.posts (id, creator_id, body, visibility, price_cents, status) values
-  ('66666666-0000-4000-a000-000000000011', '00000000-0000-4000-a000-000000000002', 'ppv s5', 'ppv', 1990, 'published');
+insert into public.posts (id, creator_id, body, visibility, price_cents, status, content_attested_at) values
+  ('66666666-0000-4000-a000-000000000011', '00000000-0000-4000-a000-000000000002', 'ppv s5', 'ppv', 1990, 'published', now());
 
 -- Pedido PPV por Pix no Asaas -----------------------------------------------------------
 select pg_temp.as_user('00000000-0000-4000-a000-000000000001');
