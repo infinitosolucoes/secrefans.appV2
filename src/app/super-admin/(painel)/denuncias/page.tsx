@@ -22,6 +22,7 @@ const TARGET_LABEL = {
   comment: "Comentário",
   profile: "Perfil",
   message: "Mensagem",
+  telegram_message: "Mensagem do Telegram",
 } as const;
 const URGENT = new Set(["nao_consensual", "menor_de_idade", "violencia"]);
 
@@ -49,7 +50,8 @@ export default async function Page({
   // Contexto de cada alvo (equipe com MFA lê posts/comentários pela RLS de moderação).
   const postIds = reports.filter((r) => r.target_type === "post").map((r) => r.target_id);
   const commentIds = reports.filter((r) => r.target_type === "comment").map((r) => r.target_id);
-  const [{ data: posts }, { data: comments }] = await Promise.all([
+  const tgIds = reports.filter((r) => r.target_type === "telegram_message").map((r) => r.target_id);
+  const [{ data: posts }, { data: comments }, { data: tgMessages }] = await Promise.all([
     postIds.length
       ? supabase.from("posts").select("id, body, status, creator_id").in("id", postIds)
       : Promise.resolve({
@@ -69,12 +71,27 @@ export default async function Page({
             author_id: string;
           }>,
         }),
+    tgIds.length
+      ? supabase
+          .from("telegram_reported_messages")
+          .select("id, author_telegram_user_id, author_user_id, text, has_media")
+          .in("id", tgIds)
+      : Promise.resolve({
+          data: [] as Array<{
+            id: string;
+            author_telegram_user_id: number;
+            author_user_id: string | null;
+            text: string;
+            has_media: boolean;
+          }>,
+        }),
   ]);
   const people = [
     ...reports.map((r) => r.reporter_id),
     ...reports.filter((r) => r.target_type === "profile").map((r) => r.target_id),
     ...(posts ?? []).map((p) => p.creator_id),
     ...(comments ?? []).map((c) => c.author_id),
+    ...(tgMessages ?? []).flatMap((m) => (m.author_user_id ? [m.author_user_id] : [])),
   ];
   const { data: profiles } = people.length
     ? await supabase
@@ -85,6 +102,7 @@ export default async function Page({
   const handle = new Map((profiles ?? []).map((p) => [p.id, p.handle]));
   const postById = new Map((posts ?? []).map((p) => [p.id, p]));
   const commentById = new Map((comments ?? []).map((c) => [c.id, c]));
+  const tgById = new Map((tgMessages ?? []).map((m) => [m.id, m]));
 
   return (
     <>
@@ -112,10 +130,12 @@ export default async function Page({
           .map((r) => {
             const post = r.target_type === "post" ? postById.get(r.target_id) : undefined;
             const comment = r.target_type === "comment" ? commentById.get(r.target_id) : undefined;
+            const isTelegram = r.target_type === "telegram_message";
+            const tg = isTelegram ? tgById.get(r.target_id) : undefined;
             const targetHandle =
               r.target_type === "profile"
                 ? handle.get(r.target_id)
-                : handle.get(post?.creator_id ?? comment?.author_id ?? "");
+                : handle.get(post?.creator_id ?? comment?.author_id ?? tg?.author_user_id ?? "");
             return (
               <li
                 key={r.id}
@@ -136,9 +156,12 @@ export default async function Page({
                       <Link href={`/${targetHandle}`} className="text-accent-text hover:underline">
                         @{targetHandle}
                       </Link>
+                    ) : tg ? (
+                      `Telegram id ${tg.author_telegram_user_id} (sem conta vinculada)`
                     ) : (
                       "conta indisponível"
                     )}
+                    {tg?.has_media && " · contém mídia"}
                     {post && ` · ${STATUS_LABEL[post.status as PostStatus] ?? post.status}`}
                     {comment &&
                       ` · ${comment.status === "removed" ? "Comentário retirado" : "Comentário visível"}`}
@@ -159,6 +182,14 @@ export default async function Page({
                   {comment && (
                     <p className="mt-2 whitespace-pre-line type-body text-ink">{comment.body}</p>
                   )}
+                  {tg && (
+                    <p className="mt-2 whitespace-pre-line type-body text-ink">
+                      {tg.text || "(sem texto)"}
+                    </p>
+                  )}
+                  {isTelegram && !tg && (
+                    <p className="mt-2 type-body text-ink-muted">Mensagem não encontrada.</p>
+                  )}
                 </div>
                 {r.details && (
                   <p className="type-body text-ink-muted">
@@ -167,7 +198,11 @@ export default async function Page({
                 )}
                 {r.status === "open" ? (
                   canDecide ? (
-                    <ReportDecisionForm reportId={r.id} canRemove={r.target_type !== "profile"} />
+                    <ReportDecisionForm
+                      reportId={r.id}
+                      canRemove={r.target_type !== "profile"}
+                      telegram={isTelegram}
+                    />
                   ) : (
                     <p className="type-caption text-ink-muted">Seu papel só permite consultar.</p>
                   )
