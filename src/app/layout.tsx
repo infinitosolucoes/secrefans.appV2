@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Montserrat, Yellowtail } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Pular para o conteúdo
         </a>
         {children}
+        <Analytics />
       </body>
     </html>
   );
