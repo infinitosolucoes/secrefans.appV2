@@ -24,6 +24,28 @@ test("perfil público mostra só dados públicos", async ({ page }) => {
 
 test("headers de segurança presentes", async ({ request }) => {
   const res = await request.get("/");
-  expect(res.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+  const csp = res.headers()["content-security-policy"] ?? "";
+  expect(csp).toContain("frame-ancestors 'none'");
   expect(res.headers()["x-content-type-options"]).toBe("nosniff");
+  // Scripts só com nonce (sem 'unsafe-inline'); nonce novo a cada requisição.
+  const scriptSrc = csp.split(";").find((d) => d.trim().startsWith("script-src"))!;
+  expect(scriptSrc).toMatch(/'nonce-[A-Za-z0-9+/=]+'/);
+  expect(scriptSrc).not.toContain("unsafe-inline");
+  const again = (await request.get("/")).headers()["content-security-policy"];
+  expect(again).not.toBe(csp);
+});
+
+test("página carrega e funciona sem violar a CSP", async ({ page }) => {
+  const violations: string[] = [];
+  page.on("console", (m) => {
+    if (/Content Security Policy|Refused to (execute|load)/i.test(m.text()))
+      violations.push(m.text());
+  });
+  await page.goto("/descobrir");
+  await expect(page.locator("main")).toBeVisible();
+  // Scripts do Next carregaram com o nonce (a página ficou interativa).
+  await expect
+    .poll(() => page.evaluate(() => document.querySelectorAll("script[nonce]").length))
+    .toBeGreaterThan(0);
+  expect(violations).toEqual([]);
 });

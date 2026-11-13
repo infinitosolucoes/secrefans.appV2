@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Montserrat, Yellowtail } from "next/font/google";
 import "./globals.css";
 
@@ -22,7 +23,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#0b0205", width: "device-width", initialScale: 1 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Lê os cabeçalhos para que toda página seja renderizada por requisição: só assim o Next
+  // consegue colocar o nonce da CSP nos scripts (páginas estáticas não teriam o nonce).
+  await headers();
   return (
     <html lang="pt-BR" className={`${montserrat.variable} ${yellowtail.variable}`}>
       <body className="min-h-dvh">

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { AGE_COOKIE, AGE_GATE_PATH, isAgeGateExempt } from "@/features/age-gate/constants";
+import { buildCsp, createNonce } from "@/lib/csp";
 
 const PROTECTED_PREFIXES = [
   "/inicio",
@@ -24,6 +25,13 @@ const isProtected = (path: string) =>
  * (papéis, MFA) é repetida no servidor (requireUser/requireStaffMfa) e no banco (RLS).
  */
 export async function middleware(request: NextRequest) {
+  // CSP com nonce novo a cada requisição: o Next lê o cabeçalho da requisição e aplica o nonce
+  // nos próprios scripts; o navegador recebe a mesma política na resposta.
+  const nonce = createNonce();
+  const csp = buildCsp(nonce, {
+    dev: process.env.NODE_ENV !== "production",
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  });
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -53,6 +61,7 @@ export async function middleware(request: NextRequest) {
     url.search = query ? `?${query}` : "";
     const res = NextResponse.redirect(url);
     for (const c of response.cookies.getAll()) res.cookies.set(c);
+    res.headers.set("Content-Security-Policy", csp);
     return res;
   };
 
@@ -81,7 +90,14 @@ export async function middleware(request: NextRequest) {
     return redirectTo("/inicio");
   }
 
-  return response;
+  // Segue para a página com o nonce no cabeçalho da requisição (cookies renovados preservados).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+  const final = NextResponse.next({ request: { headers: requestHeaders } });
+  for (const c of response.cookies.getAll()) final.cookies.set(c);
+  final.headers.set("Content-Security-Policy", csp);
+  return final;
 }
 
 export const config = {
