@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, ExternalLink, Gift, MessageCircle, Pencil } from "lucide-react";
+import {
+  BadgeCheck,
+  ExternalLink,
+  Gift,
+  Heart,
+  Image as ImageIcon,
+  MessageCircle,
+  Pencil,
+  Users,
+  Video,
+} from "lucide-react";
 import { startConversationAction } from "@/features/messages/actions";
 import { checkoutHref } from "@/features/commerce/constants";
 import {
@@ -20,7 +30,9 @@ import { createServerSupabase } from "@/server/auth/supabase";
 import { getSessionUser } from "@/server/auth/session";
 import { CATEGORIES, creatorTypeLabel, explorarHref } from "@/features/discovery/categories";
 import { BANNER_BUCKET, publicImageUrl } from "@/features/content/constants";
+import { MediaGrid } from "@/features/content/MediaGrid";
 import { PostCard } from "@/features/content/PostCard";
+import { ExpandableBio } from "@/features/identity/ExpandableBio";
 import { FollowButton, ReportButton } from "@/features/content/interactions";
 import { PackageCard } from "@/features/packages/PackageCard";
 import { SocialLinks } from "@/features/identity/SocialLinks";
@@ -29,6 +41,9 @@ import { getCreatorPackages } from "@/features/packages/queries";
 import { getCreatorPosts, isFollowing } from "@/features/content/queries";
 
 const HANDLE = /^[a-z0-9_.]{3,30}$/;
+
+const compact = (n: number) =>
+  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(n);
 
 async function loadProfile(handle: string) {
   if (!HANDLE.test(handle)) return null;
@@ -74,11 +89,14 @@ export default async function PublicProfile({
 
   const supabase = await createServerSupabase();
   const isOwner = user?.id === profile.id;
-  const tab = aba === "sobre" ? "sobre" : aba === "pacotes" ? "pacotes" : "publicacoes";
+  const tab =
+    aba === "sobre" || aba === "pacotes" || aba === "midias"
+      ? (aba as "sobre" | "pacotes" | "midias")
+      : "publicacoes";
   const [posts, packages, following, { data: stats }, owned, subscription, subscriptionOptions] =
     await Promise.all([
-      profile.is_creator && tab === "publicacoes"
-        ? getCreatorPosts(profile.id)
+      profile.is_creator && (tab === "publicacoes" || tab === "midias")
+        ? getCreatorPosts(profile.id, tab === "midias" ? 60 : 30)
         : Promise.resolve([]),
       profile.is_creator && tab === "pacotes"
         ? getCreatorPackages(profile.id)
@@ -116,55 +134,13 @@ export default async function PublicProfile({
         <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent" />
       </div>
 
-      <section className="relative -mt-12 flex flex-col gap-4 px-2 md:flex-row md:items-end md:px-4">
+      <section className="relative -mt-12 flex flex-wrap items-end justify-between gap-4 px-2 md:px-4">
         <Avatar
           path={profile.avatar_path}
           name={name}
           size="xl"
           className="border-4 border-surface shadow-glow-sm"
         />
-        <div className="min-w-0 flex-1">
-          <h1 className="flex items-center gap-2 type-heading text-ink">
-            <span className="truncate">{name}</span>
-            {profile.is_creator && (
-              <BadgeCheck className="size-6 shrink-0 text-accent" aria-label="Criador verificado" />
-            )}
-          </h1>
-          <p className="type-label text-ink-muted">@{profile.handle}</p>
-          {profile.is_creator && (typeLabel || categories.length > 0) && (
-            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Tipo de perfil e categorias">
-              {typeLabel && (
-                <li>
-                  <Link
-                    href={explorarHref({ tipo: profile.creator_type ?? undefined })}
-                    className="inline-flex h-7 items-center rounded-pill border border-accent px-3 type-caption font-semibold text-accent-text hover:bg-surface-alt"
-                  >
-                    {typeLabel}
-                  </Link>
-                </li>
-              )}
-              {categories.map((c) => (
-                <li key={c.slug}>
-                  <Link
-                    href={explorarHref({ categoria: c.slug })}
-                    className="inline-flex h-7 items-center rounded-pill border border-border px-3 type-caption text-ink-muted hover:border-ink-muted hover:text-ink"
-                  >
-                    {c.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-          {profile.is_creator && (
-            <p className="mt-1 type-caption text-ink-muted">
-              <strong className="text-ink">{stats?.posts ?? 0}</strong> publicações ·{" "}
-              <strong className="text-ink">{stats?.followers ?? 0}</strong> seguidores
-            </p>
-          )}
-          <div className="mt-3">
-            <SocialLinks socials={parseSocials(profile.socials)} />
-          </div>
-        </div>
         <div className="flex flex-wrap gap-2">
           {isOwner ? (
             <Link href="/conta/perfil" className={buttonClasses("secondary", "md")}>
@@ -222,6 +198,63 @@ export default async function PublicProfile({
           )}
         </div>
       </section>
+      <div className="mt-3 min-w-0 px-2 md:px-4">
+        <h1 className="flex items-center gap-2 type-heading text-ink">
+          <span className="truncate">{name}</span>
+          {profile.is_creator && (
+            <BadgeCheck className="size-6 shrink-0 text-accent" aria-label="Criador verificado" />
+          )}
+        </h1>
+        <p className="type-label text-ink-muted">@{profile.handle}</p>
+        {profile.is_creator && (typeLabel || categories.length > 0) && (
+          <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Tipo de perfil e categorias">
+            {typeLabel && (
+              <li>
+                <Link
+                  href={explorarHref({ tipo: profile.creator_type ?? undefined })}
+                  className="inline-flex h-7 items-center rounded-pill border border-accent px-3 type-caption font-semibold text-accent-text hover:bg-surface-alt"
+                >
+                  {typeLabel}
+                </Link>
+              </li>
+            )}
+            {categories.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={explorarHref({ categoria: c.slug })}
+                  className="inline-flex h-7 items-center rounded-pill border border-border px-3 type-caption text-ink-muted hover:border-ink-muted hover:text-ink"
+                >
+                  {c.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {profile.is_creator && (
+          <ul
+            aria-label="Números do perfil"
+            className="mt-2 flex flex-wrap gap-x-4 gap-y-1 type-caption text-ink-muted"
+          >
+            {(
+              [
+                [ImageIcon, stats?.photos ?? 0, "fotos"],
+                [Video, stats?.videos ?? 0, "vídeos"],
+                [Heart, stats?.likes ?? 0, "curtidas"],
+                [Users, stats?.followers ?? 0, "seguidores"],
+              ] as const
+            ).map(([Icon, n, label]) => (
+              <li key={label} className="inline-flex items-center gap-1.5">
+                <Icon className="size-4" aria-hidden />
+                <strong className="text-ink">{compact(n)}</strong> {label}
+              </li>
+            ))}
+          </ul>
+        )}
+        {profile.bio && <ExpandableBio text={profile.bio} className="mt-3 max-w-2xl" />}
+        <div className="mt-3">
+          <SocialLinks socials={parseSocials(profile.socials)} />
+        </div>
+      </div>
 
       {profile.is_creator && !isOwner && profile.subscription_price_cents != null && (
         <SubscriptionOffer
@@ -236,8 +269,19 @@ export default async function PublicProfile({
       <div className="mt-8 mb-6">
         <LinkTabs
           items={[
-            { href: base, label: "Publicações" },
-            ...(profile.is_creator ? [{ href: `${base}?aba=pacotes`, label: "Pacotes" }] : []),
+            {
+              href: base,
+              label: `Postagens${profile.is_creator ? ` (${stats?.posts ?? 0})` : ""}`,
+            },
+            ...(profile.is_creator
+              ? [
+                  {
+                    href: `${base}?aba=midias`,
+                    label: `Mídias (${(stats?.photos ?? 0) + (stats?.videos ?? 0)})`,
+                  },
+                  { href: `${base}?aba=pacotes`, label: "Pacotes" },
+                ]
+              : []),
             { href: `${base}?aba=sobre`, label: "Sobre" },
           ]}
           active={tab === "publicacoes" ? base : `${base}?aba=${tab}`}
@@ -272,9 +316,7 @@ export default async function PublicProfile({
         )
       ) : tab === "sobre" ? (
         <section className="flex max-w-2xl flex-col gap-6">
-          {profile.bio ? (
-            <p className="whitespace-pre-line type-body text-ink">{profile.bio}</p>
-          ) : (
+          {!profile.bio && (
             <p className="type-body text-ink-muted">Este perfil ainda não tem bio.</p>
           )}
           {(profile.links ?? []).length > 0 && (
@@ -308,6 +350,15 @@ export default async function PublicProfile({
             </div>
           )}
         </section>
+      ) : tab === "midias" ? (
+        posts.some((p) => p.mediaCount > 0) ? (
+          <MediaGrid posts={posts} />
+        ) : (
+          <EmptyState
+            title="Nenhuma foto ou vídeo ainda"
+            description="As fotos e vídeos das publicações aparecem aqui."
+          />
+        )
       ) : posts.length === 0 ? (
         <EmptyState
           title="Nenhuma publicação ainda"

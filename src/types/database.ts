@@ -993,7 +993,7 @@ isOneToOne: false
                            },
 "creator_stats":
 { Args: { "p_creator_id": string }; Returns: {
-              "followers": number,"posts": number
+              "followers": number,"likes": number,"photos": number,"posts": number,"videos": number
             }[]
                            },
 "creator_subscription_options":
