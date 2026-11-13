@@ -3,11 +3,13 @@
 - **Status:** aceito (13/11/2026)
 
 ## Contexto
+
 Criadores com conta Asaas vinculada recebem cada venda por split, direto na conta deles. Sem
 conta vinculada, o líquido fica com a Secretfans (`creator_payable` no ledger) e precisa ser
 sacado. Saque é a operação de maior risco: dinheiro sai e não volta.
 
 ## Decisão
+
 - **Saldo disponível** = saldo a receber − vendas ainda em liberação − saque aberto. A liberação
   vale 7 dias no Pix e 32 no cartão (prazo de recebimento do provedor e janela de contestação).
   Os prazos e o saque mínimo ficam em Super Admin → Configurações (auditado).
@@ -31,6 +33,7 @@ sacado. Saque é a operação de maior risco: dinheiro sai e não volta.
 - **Limites:** 5 pedidos de saque por minuto por usuário (rate limit) e MFA recomendado ao criador.
 
 ## Consequências
+
 - Em produção, ativar a validação de saque na conta Asaas com um token próprio e **não** marcar
   a validação de splits (bloquearia os repasses automáticos).
 - Hoje o próprio Super Admin pode aprovar o saque se também for criador; em produção, o ideal é

@@ -3,6 +3,7 @@
 Nada de cobrança real antes de **todos** os itens de "Bloqueantes".
 
 ## Bloqueantes
+
 - [ ] **Asaas:** aprovação escrita para o segmento +18; conta de produção CNPJ aprovada; split
       habilitado; chave Pix da conta; Pix de saque testado em produção com valor baixo.
 - [ ] **Jurídico:** Termos de uso, Política de privacidade (LGPD), política de compras e
@@ -13,6 +14,7 @@ Nada de cobrança real antes de **todos** os itens de "Bloqueantes".
       do Supabase Auth.
 
 ## Configuração do ambiente de produção
+
 - [ ] Variáveis (ver `.env.example`): `APP_STAGE=producao`, `PAYMENT_PROVIDER=asaas`,
       `ASAAS_ENV=production`, `ALLOW_SIMULATED_PAYMENTS=false`, chaves novas (nunca as de HML).
 - [ ] `ASAAS_WEBHOOK_TOKEN`, `ASAAS_TRANSFER_VALIDATION_TOKEN` e `CRON_SECRET` gerados de novo.
@@ -27,6 +29,7 @@ Nada de cobrança real antes de **todos** os itens de "Bloqueantes".
 - [ ] Super Admin e equipe com MFA; separar quem aprova saque de quem é criador.
 
 ## Antes de abrir para o público
+
 - [ ] Logo vetorial (SVG) e imagens licenciadas.
 - [ ] Monitoramento de erros (ex.: Sentry) e alertas de falha no webhook e na rotina diária.
 - [ ] Backup do banco conferido (plano pago do Supabase) e teste de restauração.

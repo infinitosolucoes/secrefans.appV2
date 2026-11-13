@@ -7,16 +7,16 @@ Especificação: `SecretFans_2_0_SPEC_MVP_Comissao_v1_2.md` (MVP somente por com
 https://secretfans-hml.vercel.app (Asaas sandbox). Produção ainda não existe: ver
 [docs/runbooks/go-live.md](docs/runbooks/go-live.md).
 
-| Etapa | O que entrega |
-| ----- | ------------- |
-| S0/S1 | Fundação, design system, aviso +18, cadastro/login, papéis + RLS, verificação de criador, Super Admin com MFA e auditoria |
-| S2    | Perfis, seguir, Explorar, feed, publicações (grátis, assinantes, PPV), curtidas, comentários, denúncias e moderação |
-| S3    | Vídeos e pacotes de mídia com versões |
-| S4    | Comissão versionada (aprovação em duas etapas), checkout e pedidos, assinaturas |
-| S5    | Asaas (Pix e cartão, assinatura recorrente, split para a conta do criador), webhooks, ledger de partidas dobradas, conciliação diária |
+| Etapa | O que entrega                                                                                                                                             |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S0/S1 | Fundação, design system, aviso +18, cadastro/login, papéis + RLS, verificação de criador, Super Admin com MFA e auditoria                                 |
+| S2    | Perfis, seguir, Explorar, feed, publicações (grátis, assinantes, PPV), curtidas, comentários, denúncias e moderação                                       |
+| S3    | Vídeos e pacotes de mídia com versões                                                                                                                     |
+| S4    | Comissão versionada (aprovação em duas etapas), checkout e pedidos, assinaturas                                                                           |
+| S5    | Asaas (Pix e cartão, assinatura recorrente, split para a conta do criador), webhooks, ledger de partidas dobradas, conciliação diária                     |
 | S6    | Chat fã ↔ criador (mídia, mensagem paga, mensagem em massa), Mimo, notificações no site e por e-mail (Resend), extrato com CSV, Carteira e saques por Pix |
-| S7    | Avisos de venda, mimo, assinante, renovação, mensagem, post, seguidor, curtida, comentário, verificação, assinatura acabando e saque |
-| S8    | Configurações editáveis e auditadas, rate limit com Upstash, declaração de direitos/consentimento ao publicar, MFA opcional para todos, CSP com nonce |
+| S7    | Avisos de venda, mimo, assinante, renovação, mensagem, post, seguidor, curtida, comentário, verificação, assinatura acabando e saque                      |
+| S8    | Configurações editáveis e auditadas, rate limit com Upstash, declaração de direitos/consentimento ao publicar, MFA opcional para todos, CSP com nonce     |
 
 ## Rodando localmente
 
@@ -37,14 +37,14 @@ Usuários de teste, senha e segredo TOTP: ver `supabase/README.md`. E-mails loca
 
 ## Scripts
 
-| Comando                      | O que faz |
-| ---------------------------- | --------- |
-| `npm run lint` / `typecheck` | ESLint e TypeScript strict |
-| `npm test`                   | Vitest: schemas, authz, Asaas (cliente e webhooks), saques, rate limit, CSP, extrato, e-mails |
-| `npm run db:test`            | pgTAP: RLS, comissão, ledger, chat, notificações, saques, configurações e declarações |
+| Comando                      | O que faz                                                                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run lint` / `typecheck` | ESLint e TypeScript strict                                                                                                                         |
+| `npm test`                   | Vitest: schemas, authz, Asaas (cliente e webhooks), saques, rate limit, CSP, extrato, e-mails                                                      |
+| `npm run db:test`            | pgTAP: RLS, comissão, ledger, chat, notificações, saques, configurações e declarações                                                              |
 | `npm run test:e2e`           | Playwright (build de produção): cadastro, login, MFA, publicação, checkout simulado, chat, saques, admin. Use `E2E_PORT` se a 3000 estiver ocupada |
-| `npm run tokens`             | Regenera `src/styles/tokens.css` a partir de `design/tokens.json` |
-| `npm run db:types`           | Regenera `src/types/database.ts` |
+| `npm run tokens`             | Regenera `src/styles/tokens.css` a partir de `design/tokens.json`                                                                                  |
+| `npm run db:types`           | Regenera `src/types/database.ts`                                                                                                                   |
 
 Scripts operacionais: `scripts/asaas-register-webhook.mjs` (registra o webhook de cobranças e
 transferências no Asaas) e `scripts/build-email-templates.mjs` (e-mails de login em pt-BR).

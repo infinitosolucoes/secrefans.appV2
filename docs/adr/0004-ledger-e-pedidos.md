@@ -3,12 +3,14 @@
 - **Status:** aceito (12/11/2026)
 
 ## Contexto
+
 A Secretfans vende assinaturas, PPV, pacotes, mimos e mensagens pagas, fica com uma comissão e
 repassa o restante ao criador. O dinheiro passa pelo Asaas, com ou sem split. Precisamos saber,
 a qualquer momento e de forma auditável, quanto pertence a cada criador, quanto é receita da
 plataforma e quanto ainda está no provedor, sem que um bug ou uma edição manual apague histórico.
 
 ## Decisão
+
 - **Pedido (`orders`)** congela no momento da compra: valor bruto, regra de comissão vigente
   (versão), comissão, taxa estimada do meio de pagamento e líquido do criador. Mudar a comissão
   depois não altera pedidos antigos.
@@ -35,6 +37,7 @@ plataforma e quanto ainda está no provedor, sem que um bug ou uma edição manu
   vigente naquela data.
 
 ## Consequências
+
 - Correções são feitas com novos lançamentos, nunca editando os antigos.
 - A tela Super Admin → Financeiro mostra os totais por tipo de conta e confere o balanço.
 - Testes pgTAP cobrem venda, taxa real, split, estorno, imutabilidade e balanço.
