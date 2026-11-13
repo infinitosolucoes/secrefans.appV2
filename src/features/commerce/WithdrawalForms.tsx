@@ -20,7 +20,7 @@ const PLACEHOLDER: Record<PixKeyTypeName, string> = {
 };
 
 /** Cadastro/troca da chave Pix que recebe os saques. */
-export function PixKeyForm({ hasKey }: { hasKey: boolean }) {
+export function PixKeyForm({ hasKey, sandbox = false }: { hasKey: boolean; sandbox?: boolean }) {
   const [state, action, pending] = useActionState(setPixKeyAction, null);
   const [type, setType] = useState<PixKeyTypeName>("cpf");
   return (
@@ -47,6 +47,13 @@ export function PixKeyForm({ hasKey }: { hasKey: boolean }) {
           required
         />
       </div>
+      {sandbox && (
+        <Alert tone="info">
+          Ambiente de testes (sandbox do Asaas): chaves reais não funcionam. Use o e-mail{" "}
+          <strong>cliente-a00001@pix.bcb.gov.br</strong> (ou o CPF 99991111140) para simular um Pix
+          concluído.
+        </Alert>
+      )}
       <Checkbox name="confirm" required>
         Confirmo que esta chave Pix está no meu nome (mesmo titular da verificação de identidade).
       </Checkbox>

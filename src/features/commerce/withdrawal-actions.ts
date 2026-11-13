@@ -7,7 +7,7 @@ import { normalizePixKey, PIX_KEY_TYPES } from "@/lib/pix";
 import { requireRole, requireStaffMfa } from "@/server/auth/session";
 import { createServerSupabase } from "@/server/auth/supabase";
 import { dispatchPendingEmails } from "@/server/email";
-import { executeWithdrawal } from "@/server/payouts";
+import { executeWithdrawal, resolveStuckWithdrawal } from "@/server/payouts";
 import { parsePriceToCents } from "@/features/content/schemas";
 
 export interface WithdrawalResult {
@@ -120,4 +120,14 @@ async function decideWithdrawal(fd: FormData, approve: boolean): Promise<Withdra
   after(() => dispatchPendingEmails().catch(() => undefined));
   revalidatePath("/super-admin/saques");
   return { ok: true, message };
+}
+
+/** Financeiro: saque aprovado sem confirmação do provedor → procura no provedor e resolve. */
+export async function resolveStuckWithdrawalAction(fd: FormData) {
+  await requireStaffMfa("payout.manage");
+  const id = z.uuid().safeParse(fd.get("id"));
+  if (!id.success) return;
+  await resolveStuckWithdrawal(id.data).catch(() => undefined);
+  after(() => dispatchPendingEmails().catch(() => undefined));
+  revalidatePath("/super-admin/saques");
 }

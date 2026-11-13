@@ -96,6 +96,44 @@ export async function executeWithdrawal(id: string): Promise<string> {
   return applyTransfer(id, t);
 }
 
+/**
+ * Saque aprovado que ficou sem transferência (o provedor não respondeu a tempo): procura no
+ * provedor pela referência externa. Achou → vincula e aplica o status; não achou depois de
+ * 10 minutos → o provedor não criou o Pix, então marca como falho e devolve o saldo.
+ */
+export async function resolveStuckWithdrawal(id: string): Promise<string> {
+  const db = createServiceSupabase();
+  const { data: w } = await db
+    .from("withdrawals")
+    .select("id, status, provider_transfer_id, decided_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!w || w.status !== "processing" || w.provider_transfer_id) return "skip";
+  if (activeProviderName() !== "asaas") return "skip";
+  const asaas = getAsaasProvider();
+  const t = (await asaas.listRecentTransfers()).find(
+    (x) => x.externalReference === `withdrawal:${id}`,
+  );
+  if (t) {
+    await db.rpc("attach_withdrawal_transfer", {
+      p_id: id,
+      p_provider: "asaas",
+      p_transfer_id: t.id,
+    });
+    return applyTransfer(id, t);
+  }
+  if (Date.now() - new Date(w.decided_at ?? 0).getTime() < 10 * 60_000) return "aguardando";
+  await db.rpc("attach_withdrawal_transfer", {
+    p_id: id,
+    p_provider: "asaas",
+    p_transfer_id: `none_${id}`,
+  });
+  return settle(id, {
+    status: "failed",
+    reason: "O provedor não criou a transferência. Confira a chave Pix e peça de novo.",
+  });
+}
+
 /** Conciliação: consulta as transferências em processamento e aplica as que já terminaram. */
 export async function reconcileWithdrawals() {
   if (activeProviderName() !== "asaas") return { checked: 0, settled: 0 };
@@ -109,6 +147,16 @@ export async function reconcileWithdrawals() {
     .not("provider_transfer_id", "is", null)
     .limit(50);
   let settled = 0;
+  const { data: stuck } = await db
+    .from("withdrawals")
+    .select("id")
+    .eq("status", "processing")
+    .is("provider_transfer_id", null)
+    .lt("decided_at", new Date(Date.now() - 10 * 60_000).toISOString())
+    .limit(20);
+  for (const w of stuck ?? []) {
+    if ((await resolveStuckWithdrawal(w.id).catch(() => "erro")) === "ok") settled++;
+  }
   for (const w of data ?? []) {
     try {
       const r = await applyTransfer(w.id, await asaas.getTransfer(w.provider_transfer_id!));

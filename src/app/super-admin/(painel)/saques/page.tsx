@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui";
+import { Alert, Badge, Button, EmptyState, PageHeader } from "@/components/ui";
 import { Table, Td, THead, Tr } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
 import { PIX_KEY_LABEL, type PixKeyTypeName } from "@/lib/pix";
@@ -8,6 +8,9 @@ import { createServerSupabase } from "@/server/auth/supabase";
 import { formatBRL } from "@/features/content/constants";
 import { WITHDRAWAL_STATUS } from "@/features/commerce/constants";
 import { WithdrawalDecisionForm } from "@/features/commerce/WithdrawalForms";
+import { resolveStuckWithdrawalAction } from "@/features/commerce/withdrawal-actions";
+
+export const maxDuration = 60;
 
 export const metadata: Metadata = { title: "Saques · Admin" };
 
@@ -65,11 +68,28 @@ export default async function Page() {
       />
 
       {stuck.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 flex flex-col gap-3">
           <Alert tone="warning">
-            {stuck.length} saque(s) aprovado(s) sem confirmação de envio do provedor. Confira no
-            painel do Asaas antes de qualquer ação (para não pagar em dobro).
+            {stuck.length} saque(s) aprovado(s) sem confirmação do provedor. &quot;Verificar no
+            Asaas&quot; procura a transferência: se existir, conclui o saque; se não existir, marca
+            como falho e devolve o saldo (sem risco de Pix em dobro).
           </Alert>
+          {stuck.map((w) => (
+            <form
+              key={w.id}
+              action={resolveStuckWithdrawalAction}
+              className="flex flex-wrap items-center gap-3"
+            >
+              <input type="hidden" name="id" value={w.id} />
+              <span className="type-body text-ink">
+                {formatBRL(w.amount_cents)} · @{profileOf.get(w.creator_id)?.handle ?? "?"} ·
+                aprovado em {formatDateTime(w.decided_at ?? w.requested_at)}
+              </span>
+              <Button type="submit" variant="secondary" size="sm">
+                Verificar no Asaas
+              </Button>
+            </form>
+          ))}
         </div>
       )}
 

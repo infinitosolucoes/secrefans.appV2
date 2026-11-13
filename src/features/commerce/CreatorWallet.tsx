@@ -4,7 +4,9 @@ import { Alert, Badge, Button } from "@/components/ui";
 import { Table, Td, THead, Tr } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
 import { maskPixKey, PIX_KEY_LABEL, type PixKeyTypeName } from "@/lib/pix";
+import { serverEnv } from "@/lib/env.server";
 import { createServerSupabase } from "@/server/auth/supabase";
+import { activeProviderName } from "@/server/providers/payments";
 import { formatBRL } from "@/features/content/constants";
 import { WITHDRAWAL_STATUS } from "./constants";
 import { getPayoutSummary, getPixKey, getWithdrawals } from "./queries";
@@ -28,6 +30,7 @@ export async function CreatorWallet({ userId }: { userId: string }) {
       .maybeSingle(),
   ]);
   const balance = summary.balance;
+  const sandbox = activeProviderName() === "asaas" && serverEnv().ASAAS_ENV !== "production";
   const open = withdrawals.find((w) => w.status === "requested" || w.status === "processing");
 
   return (
@@ -84,7 +87,7 @@ export async function CreatorWallet({ userId }: { userId: string }) {
             </Link>
           </Alert>
         ) : !pixKey ? (
-          <PixKeyForm hasKey={false} />
+          <PixKeyForm hasKey={false} sandbox={sandbox} />
         ) : (
           <>
             <p className="type-body text-ink">
@@ -106,7 +109,7 @@ export async function CreatorWallet({ userId }: { userId: string }) {
                   Trocar chave Pix
                 </summary>
                 <div className="mt-4">
-                  <PixKeyForm hasKey />
+                  <PixKeyForm hasKey sandbox={sandbox} />
                 </div>
               </details>
             )}

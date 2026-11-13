@@ -131,7 +131,12 @@ export class AsaasPaymentProvider {
     this.fetchImpl = cfg.fetchImpl ?? fetch;
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    timeoutMs = 15_000,
+  ): Promise<T> {
     // GET pode ser repetido com segurança; POST/DELETE não (evita cobrança duplicada).
     const attempts = method === "GET" ? 2 : 1;
     let lastError: unknown;
@@ -145,7 +150,7 @@ export class AsaasPaymentProvider {
             "User-Agent": "secretfans",
           },
           body: body === undefined ? undefined : JSON.stringify(body),
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(timeoutMs),
           cache: "no-store",
         });
         const text = await res.text();
@@ -314,13 +319,25 @@ export class AsaasPaymentProvider {
     externalReference: string;
     description: string;
   }): Promise<AsaasTransfer> {
-    return this.request<AsaasTransfer>("POST", "/transfers", {
-      value: input.amountCents / 100,
-      operationType: "PIX",
-      ...asaasPixKey(input.keyType, input.key),
-      description: input.description.slice(0, 140),
-      externalReference: input.externalReference,
-    });
+    // A consulta da chave no DICT pode levar ~30 s (medido no sandbox): espera mais que o padrão.
+    return this.request<AsaasTransfer>(
+      "POST",
+      "/transfers",
+      {
+        value: input.amountCents / 100,
+        operationType: "PIX",
+        ...asaasPixKey(input.keyType, input.key),
+        description: input.description.slice(0, 140),
+        externalReference: input.externalReference,
+      },
+      45_000,
+    );
+  }
+
+  /** Transferências mais recentes (para achar uma pela referência externa). */
+  async listRecentTransfers(limit = 100): Promise<AsaasTransfer[]> {
+    const r = await this.request<{ data: AsaasTransfer[] }>("GET", `/transfers?limit=${limit}`);
+    return r.data ?? [];
   }
 
   async getTransfer(id: string): Promise<AsaasTransfer> {
